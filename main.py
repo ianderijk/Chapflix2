@@ -1,4 +1,3 @@
-from pathlib import Path
 from dash import dcc, html
 from dash.dependencies import Input, Output
 from flask import Flask
@@ -9,12 +8,12 @@ player = Player()
 
 server = Flask(__name__)
 app = dash.Dash(server=server, prevent_initial_callbacks=True)
-app.layout = html.Div(
-    children=[  # outer most div, whole page
-        html.Div(
-            children=[  # big div at the top used for menus
-                html.Div(
-                    children=[  # div containing the dropdowns
+app.layout = html.Div( # outer most div, whole page
+    children=[
+        html.Div( # big div at the top used for menus
+            children=[
+                html.Div( # div containing the dropdowns
+                    children=[
                         html.H2("Welcome to Chapflix"),
                         # ,html.Button("Next episode", id = "LastPlayed", n_clicks = 0)
                         html.H4(player.last_played_name, id="LastPlayedHeader"),
@@ -48,10 +47,10 @@ app.layout = html.Div(
                 "align": "center",
             },
         ),
-        html.Div(
-            children=[  # div container for the video player
-                html.Div(
-                    children=[  # div containing the video player
+        html.Div( # div container for the video player
+            children=[
+                html.Div( # div containing the video player
+                    children=[
                         html.Video(controls=True, id="Player", src=None),
                         html.Script("""
                     document.addEventListener("fullscreenchange", function() {
