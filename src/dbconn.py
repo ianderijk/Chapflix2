@@ -152,4 +152,4 @@ def write_films_shows_data() -> None:
 
 
 if __name__ == "__main__":
-    build_tables()
+    print("hello from dbconn.py")

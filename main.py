@@ -8,11 +8,11 @@ player = Player()
 
 server = Flask(__name__)
 app = dash.Dash(server=server, prevent_initial_callbacks=True)
-app.layout = html.Div( # outer most div, whole page
+app.layout = html.Div(  # outer most div, whole page
     children=[
-        html.Div( # big div at the top used for menus
+        html.Div(  # big div at the top used for menus
             children=[
-                html.Div( # div containing the dropdowns
+                html.Div(  # div containing the dropdowns
                     children=[
                         html.H2("Welcome to Chapflix"),
                         # ,html.Button("Next episode", id = "LastPlayed", n_clicks = 0)
@@ -47,9 +47,9 @@ app.layout = html.Div( # outer most div, whole page
                 "align": "center",
             },
         ),
-        html.Div( # div container for the video player
+        html.Div(  # div container for the video player
             children=[
-                html.Div( # div containing the video player
+                html.Div(  # div containing the video player
                     children=[
                         html.Video(controls=True, id="Player", src=None),
                         html.Script("""
@@ -79,19 +79,6 @@ app.layout = html.Div( # outer most div, whole page
         ),
     ]
 )
-
-# @app.callback(
-#         Output(component_id = "Player", component_property = "src", allow_duplicate = True)
-#         ,Input(component_id = "LastPlayed", component_property = "n_clicks")
-# )
-
-# def next_episode(n_clicks: int) -> None | str:
-#     if n_clicks == 0:
-#         return
-#     file = player.next_episode()
-#     player.update_on_play(file)
-#     player.track_play()
-#     return file
 
 
 @app.callback(

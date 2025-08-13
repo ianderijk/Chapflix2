@@ -43,9 +43,7 @@ class Player:
 
     def record_played_file(self, file: Path) -> None:
         playtime = datetime.now()
-        file_data = execute_query(
-            f"select file_key from content where file = '{file}'"
-        )
+        file_data = execute_query(f"select file_key from content where file = '{file}'")
         file_key = file_data[0][0]
         execute_statement(
             f"""
@@ -55,7 +53,7 @@ class Player:
 
     def format_filepath(self, path: Path) -> str:
         path_list = str(path).split("/")
-        return "/".join(path_list[path_list.index("assets"):])
+        return "/".join(path_list[path_list.index("assets") :])
 
     def get_show_path(self, show: str, season: int, episode: int) -> str:
         file_data = execute_query(
@@ -118,8 +116,4 @@ class Player:
 
 
 if __name__ == "__main__":
-    foo = Player()
-    bar = foo.record_played_file(
-        Path("/media/idr/ExtDrive/Chaplifx2/assets/PeepShow/S1E1.mp4")
-    )
-    print(bar)
+    print("hello from player.py")
