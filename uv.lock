@@ -26,24 +26,26 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "dash" },
-    { name = "pytest" },
     { name = "sqlalchemy" },
 ]
 
 [package.dev-dependencies]
 dev = [
+    { name = "pytest" },
     { name = "ruff" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "dash", specifier = ">=3.2.0" },
-    { name = "pytest", specifier = ">=8.4.1" },
     { name = "sqlalchemy", specifier = ">=2.0.42" },
 ]
 
 [package.metadata.requires-dev]
-dev = [{ name = "ruff", specifier = ">=0.12.8" }]
+dev = [
+    { name = "pytest", specifier = ">=8.4.1" },
+    { name = "ruff", specifier = ">=0.12.8" },
+]
 
 [[package]]
 name = "charset-normalizer"

@@ -1,26 +1,26 @@
 from __future__ import annotations
 from pathlib import Path
 import os
-import sqlalchemy as sa
+from sqlalchemy import Engine, text, create_engine
 
 
 MEDIA_FILES = Path(os.path.join(Path(__file__).parent.parent), "assets")
 DB_ADDRESS = Path(os.path.join(Path(__file__).parent.parent, "Chapflix.db"))
-db = sa.create_engine(f"sqlite:///{DB_ADDRESS}")
+db = create_engine(f"sqlite:///{DB_ADDRESS}")
 
 
-def execute_statement(statement: str, engine=db, params: None | dict = None) -> None:
+def execute_statement(statement: str, engine: Engine=db, params: None | dict = None) -> None:
     """Function to allow execution of statements that do not return any results
     such as create and insert"""
     with engine.connect() as conn:
-        conn.execute(sa.text(statement), params or {})
+        conn.execute(text(statement), params or {})
         conn.commit()
 
 
-def execute_query(query: str, engine=db):
+def execute_query(query: str, engine: Engine=db):
     """Funciton to allow execution of queries that return results"""
     with engine.connect() as conn:
-        data = conn.execute(sa.text(query))
+        data = conn.execute(text(query))
         return data.fetchall()
 
 
