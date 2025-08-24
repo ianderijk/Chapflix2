@@ -114,6 +114,21 @@ class Player:
         """Sets the attribute for the app's initial dropdown list of playable films"""
         self.playable_shows = self.drop_down_lists(self.get_show_options())
 
+    def get_selection_last_played(self, selection: str) -> str:
+        selection_data = execute_query(f"""
+        select s.show
+            ,s.season
+            ,s.episode
+        from shows s
+        left join history h on s.file_key = h.file_key
+        where s.show = '{selection}'
+        order by h.time desc
+        limit 1
+        """)
+        if len(selection_data) == 0:
+            return "Show has not been watched, start from the beginning!"
+        return f"{selection_data[0][0]}, Season {selection_data[0][1]} Episode {selection_data[0][2]}"
+
 
 if __name__ == "__main__":
     print("hello from player.py")

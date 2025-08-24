@@ -94,14 +94,15 @@ def play_film(film: str) -> None | str:
 
 
 @app.callback(
+    Output(component_id="LastPlayedHeader", component_property="value"),
     Output(component_id="SeasonPicker", component_property="options"),
     Output(component_id="SeasonPicker", component_property="value"),
     Input(component_id="ShowPicker", component_property="value"),
 )
 def update_seasons(show: str) -> tuple:
     if show and show != "Pick a show":
-        return player.get_season_options(show), None
-    return [], None
+        return player.get_selection_last_played(show), player.get_season_options(show), None
+    return player.last_played_name, [], None
 
 
 @app.callback(
