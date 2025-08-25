@@ -2,16 +2,21 @@
 FROM python:3.11-slim
 
 # Set working directory
-WORKDIR /app
+WORKDIR /media/idr/ExtDrive/Chapflix
+
+# Install dependencies
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy your code into the container
 COPY . .
 
-# Install dependencies
-RUN pip install --no-cache-dir -r requirements.txt
-
 # Expose the port your app runs on
 EXPOSE 8042
+
+# Set up app user
+RUN useradd app
+USER app
 
 # Run the app
 CMD ["python", "main.py"]

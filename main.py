@@ -94,14 +94,22 @@ def play_film(film: str) -> None | str:
 
 
 @app.callback(
-    Output(component_id="LastPlayedHeader", component_property="value"),
+    Output(
+        component_id="LastPlayedHeader",
+        component_property="value",
+        allow_duplicate=True,
+    ),
     Output(component_id="SeasonPicker", component_property="options"),
     Output(component_id="SeasonPicker", component_property="value"),
     Input(component_id="ShowPicker", component_property="value"),
 )
 def update_seasons(show: str) -> tuple:
     if show and show != "Pick a show":
-        return player.get_selection_last_played(show), player.get_season_options(show), None
+        return (
+            player.get_selection_last_played(show),
+            player.get_season_options(show),
+            None,
+        )
     return player.last_played_name, [], None
 
 
@@ -131,4 +139,4 @@ def play_episode(show: str, season: int, episode: int) -> None | str:
 
 
 if __name__ == "__main__":
-    app.run(host="192.168.0.19", port=8042, debug=False, use_reloader=False)
+    app.run(host="0.0.0.0", port=8042, debug=False, use_reloader=False)
