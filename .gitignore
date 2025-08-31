@@ -18,3 +18,6 @@ Chapflix.db
 # Dev dependency caches
 .pytest_cache/
 .ruff_cache/
+
+# Environment variables
+.env

@@ -2,20 +2,21 @@ from __future__ import annotations
 from pathlib import Path
 import os
 from sqlalchemy import Engine, text, create_engine
+from dotenv import load_dotenv
+
+
+load_dotenv()
 
 
 MEDIA_FILES = Path(os.path.join(Path(__file__).parent.parent), "assets")
-DB_ADDRESS = Path(os.path.join(Path(__file__).parent.parent, "Chapflix.db"))
-db = create_engine(f"sqlite:///{DB_ADDRESS}")
+db = create_engine(str(os.getenv("DATABASE_URL")))
 
 
-def execute_statement(
-    statement: str, engine: Engine = db, params: None | dict = None
-) -> None:
+def execute_statement(statement: str, engine: Engine = db) -> None:
     """Function to allow execution of statements that do not return any results
     such as create and insert"""
     with engine.connect() as conn:
-        conn.execute(text(statement), params or {})
+        conn.execute(text(statement))
         conn.commit()
 
 
@@ -54,9 +55,9 @@ def build_tables() -> None:
 
     history = """
     CREATE TABLE IF NOT EXISTS history (
-        play_num INTEGER PRIMARY KEY AUTOINCREMENT,
+        play_num SERIAL PRIMARY KEY,
         file_key INTEGER,
-        time DATETIME,
+        time TIMESTAMP,
         FOREIGN KEY (file_key) REFERENCES content(file_key)
     )
     """
@@ -82,10 +83,9 @@ def gather_content() -> list:
 def write_contents_data() -> None:
     content = gather_content()
     for i, x in enumerate(content):
-        execute_statement(
-            "INSERT INTO content VALUES (:file_key, :file)",
-            params={"file_key": i, "file": x},
-        )
+        execute_statement(f"""INSERT INTO content (file_key, file) VALUES (
+                          {i}, '{x}'
+                          );""")
 
 
 def gather_shows_data() -> dict:
@@ -136,22 +136,26 @@ def write_films_shows_data() -> None:
             file_data = execute_query(f"select * from content where file = '{file}'")
             file_key = file_data[0][0]
             execute_statement(
-                "INSERT INTO shows VALUES (:file_key, :show, :season, :episode)",
-                params={
-                    "file_key": file_key,
-                    "show": show,
-                    "season": season,
-                    "episode": episode,
-                },
+                f"""INSERT INTO shows (file_key, show, season, episode) VALUES (
+                {file_key}, '{show}', {season}, {episode}
+                );"""
             )
     for film, file in films.items():
         file_data = execute_query(f"select * from content where file = '{file[0]}'")
         file_key = file_data[0][0]
         execute_statement(
-            "INSERT INTO films VALUES (:file_key, :film)",
-            params={"file_key": file_key, "film": film},
+            f"""INSERT INTO films (file_key, film) VALUES (
+            {file_key}, '{film}'
+            );"""
         )
 
 
+def main() -> None:
+    """Function to build database on initial setup"""
+    build_tables()
+    write_contents_data()
+    write_films_shows_data()
+
+
 if __name__ == "__main__":
-    print("hello from dbconn.py")
+    print("hello from dbconn!")
