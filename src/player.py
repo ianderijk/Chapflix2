@@ -15,21 +15,7 @@ class Player:
         the string is formatted to include the show name, season number and episode.
         Films are returned as a string of the film name. File key attribute is simply
         the relevant file key regardless of content type"""
-        last_played_data = execute_query(
-            """
-            select case when f.film is not null then 'film' else 'show' end as media_type
-                ,coalesce(f.file_key, s.file_key) as file_key
-                ,f.film
-                ,s.show
-                ,s.season
-                ,s.episode
-            from history h
-            left join shows s on h.file_key = s.file_key
-            left join films f on h.file_key = f.file_key
-            order by time desc
-            limit 1
-            """
-        )
+        last_played_data = execute_query("select * from get_last_played()")
         self.last_played_key = last_played_data[0][1]
         if last_played_data[0][0] == "film":
             self.last_played_name = str(last_played_data[0][2])
@@ -57,14 +43,7 @@ class Player:
 
     def get_show_path(self, show: str, season: int, episode: int) -> str:
         file_data = execute_query(
-            f"""
-            select c.file
-            from shows s
-            left join content c on s.file_key = c.file_key
-            where s.show = '{show}'
-                and s.season = {season}
-                and s.episode = {episode}
-            """
+            f"select * from get_show_path({show}, {season}, {episode})"
         )
         filepath = Path(file_data[0][0])
         self.record_played_file(filepath)
@@ -115,16 +94,7 @@ class Player:
         self.playable_shows = self.drop_down_lists(self.get_show_options())
 
     def get_selection_last_played(self, selection: str) -> str:
-        selection_data = execute_query(f"""
-        select s.show
-            ,s.season
-            ,s.episode
-        from shows s
-        left join history h on s.file_key = h.file_key
-        where s.show = '{selection}'
-        order by h.time desc
-        limit 1
-        """)
+        selection_data = execute_query(f"select * from get_show('{selection}');")
         if len(selection_data) == 0:
             return "Show has not been watched, start from the beginning!"
         return f"{selection_data[0][0]}, Season {selection_data[0][1]} Episode {selection_data[0][2]}"

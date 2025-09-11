@@ -11,6 +11,8 @@ load_dotenv()
 MEDIA_FILES = Path(os.path.join(Path(__file__).parent.parent), "assets")
 db = create_engine(str(os.getenv("DATABASE_URL")))
 
+print(os.getenv("USERNAME"))
+
 
 def execute_statement(statement: str, engine: Engine = db) -> None:
     """Function to allow execution of statements that do not return any results
@@ -28,44 +30,8 @@ def execute_query(query: str, engine: Engine = db):
 
 
 def build_tables() -> None:
-    content = """
-    CREATE TABLE IF NOT EXISTS content (
-        file_key INTEGER PRIMARY KEY,
-        file TEXT
-    )
-    """
-
-    films = """
-    CREATE TABLE IF NOT EXISTS films (
-        file_key INTEGER PRIMARY KEY,
-        film TEXT,
-        FOREIGN KEY (file_key) REFERENCES content(file_key)
-    )
-    """
-
-    shows = """
-    CREATE TABLE IF NOT EXISTS shows (
-        file_key INTEGER PRIMARY KEY,
-        show TEXT,
-        season INTEGER,
-        episode INTEGER,
-        FOREIGN KEY (file_key) REFERENCES content(file_key)
-    )
-    """
-
-    history = """
-    CREATE TABLE IF NOT EXISTS history (
-        play_num SERIAL PRIMARY KEY,
-        file_key INTEGER,
-        time TIMESTAMP,
-        FOREIGN KEY (file_key) REFERENCES content(file_key)
-    )
-    """
-    execute_statement(content)
-    execute_statement(films)
-    execute_statement(shows)
-    execute_statement(history)
-
+    execute_statement("call create_schema_tables()")
+    
 
 def gather_content() -> list:
     folders = os.listdir(MEDIA_FILES)
