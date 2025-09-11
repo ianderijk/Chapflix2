@@ -43,7 +43,7 @@ class Player:
 
     def get_show_path(self, show: str, season: int, episode: int) -> str:
         file_data = execute_query(
-            f"select * from get_show_path({show}, {season}, {episode})"
+            f"select * from get_show_path('{show}', {season}, {episode})"
         )
         filepath = Path(file_data[0][0])
         self.record_played_file(filepath)
