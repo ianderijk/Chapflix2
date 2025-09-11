@@ -50,14 +50,7 @@ class Player:
         return self.format_filepath(filepath)
 
     def get_film_path(self, film) -> str:
-        file_data = execute_query(
-            f"""
-            select c.file
-            from films f
-            left join content c on f.file_key = c.file_key
-            where f.film = '{film}'
-            """
-        )
+        file_data = execute_query(f"select * from get_film_path({film})")
         filepath = Path(file_data[0][0])
         self.record_played_file(filepath)
         return self.format_filepath(filepath)
