@@ -11,8 +11,6 @@ load_dotenv()
 MEDIA_FILES = Path(os.path.join(Path(__file__).parent.parent), "assets")
 db = create_engine(str(os.getenv("DATABASE_URL")))
 
-print(os.getenv("USERNAME"))
-
 
 def execute_statement(statement: str, engine: Engine = db) -> None:
     """Function to allow execution of statements that do not return any results
@@ -31,9 +29,11 @@ def execute_query(query: str, engine: Engine = db):
 
 def build_tables() -> None:
     execute_statement("call create_schema_tables()")
-    
+
 
 def gather_content() -> list:
+    """Function to gather the data required for the content table on an
+    initial load"""
     folders = os.listdir(MEDIA_FILES)
     contents = []
     for x in folders:
@@ -49,6 +49,33 @@ def gather_content() -> list:
 def write_contents_data() -> None:
     content = gather_content()
     for i, x in enumerate(content):
+        execute_statement(f"""INSERT INTO content (file_key, file) VALUES (
+                          {i}, '{x}'
+                          );""")
+
+
+def incremental_gather_content() -> list:
+    """Function to gather data required to add new content to the content table"""
+    folders = os.listdir(MEDIA_FILES)
+    existing_content_data = execute_query("select file from content")
+    existing_content = [x[0] for x in existing_content_data]
+    contents = []
+    for x in folders:
+        if x == "images":
+            continue
+        contents += [
+            os.path.join(MEDIA_FILES, x, y)
+            for y in os.listdir(os.path.join(MEDIA_FILES, x))
+            if os.path.join(MEDIA_FILES, x, y) not in existing_content
+        ]
+    return contents
+
+
+def incremental_write_contents_data() -> None:
+    file_key_data = execute_query("select max(file_key) from content")
+    max_file_key: int = file_key_data[0][0] + 1
+    content = incremental_gather_content()
+    for i, x in enumerate(content, start=max_file_key):
         execute_statement(f"""INSERT INTO content (file_key, file) VALUES (
                           {i}, '{x}'
                           );""")
@@ -86,6 +113,48 @@ def gather_films_data() -> dict:
     return results
 
 
+def incremental_gather_shows_data() -> dict:
+    folders = os.listdir(MEDIA_FILES)
+    missing_content_data = execute_query("select * from incremental_load_content()")
+    missing_content = [x[0] for x in missing_content_data]
+    results = {}
+    for x in folders:
+        if x == "images":
+            continue
+        contents = [
+            os.path.join(MEDIA_FILES, x, y)
+            for y in os.listdir(os.path.join(MEDIA_FILES, x))
+            if os.path.join(MEDIA_FILES, x, y) in missing_content
+        ]
+        if len(contents) == 0:
+            continue
+        elif len(contents) == 1:
+            continue
+        results[x] = contents
+    return results
+
+
+def incremental_gather_films_data() -> dict:
+    folders = os.listdir(MEDIA_FILES)
+    missing_content_data = execute_query("select * from incremental_load_content()")
+    missing_content = [x[0] for x in missing_content_data]
+    results = {}
+    for x in folders:
+        if x == "images":
+            continue
+        contents = [
+            os.path.join(MEDIA_FILES, x, y)
+            for y in os.listdir(os.path.join(MEDIA_FILES, x))
+            if os.path.join(MEDIA_FILES, x, y) in missing_content
+        ]
+        if len(contents) == 0:
+            continue
+        elif len(contents) > 1:
+            continue
+        results[x] = contents
+    return results
+
+
 def episode_data(episode_file: Path) -> tuple:
     file = episode_file.stem
     season = int(file[file.index("S") + 1 : file.index("E")])
@@ -93,9 +162,13 @@ def episode_data(episode_file: Path) -> tuple:
     return season, episode
 
 
-def write_films_shows_data() -> None:
-    shows = gather_shows_data()
-    films = gather_films_data()
+def write_films_shows_data(incremental: bool) -> None:
+    if incremental:
+        shows = incremental_gather_shows_data()
+        films = incremental_gather_films_data()
+    else:
+        shows = gather_shows_data()
+        films = gather_films_data()
     for show, episodes in shows.items():
         for file in episodes:
             season, episode = episode_data(Path(file))
@@ -116,12 +189,16 @@ def write_films_shows_data() -> None:
         )
 
 
-def main() -> None:
-    """Function to build database on initial setup"""
+def initial_build() -> None:
     build_tables()
     write_contents_data()
-    write_films_shows_data()
+    write_films_shows_data(False)
+
+
+def incremental_build() -> None:
+    incremental_write_contents_data()
+    write_films_shows_data(True)
 
 
 if __name__ == "__main__":
-    print("hello from dbconn!")
+    incremental_build()
