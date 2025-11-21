@@ -50,7 +50,7 @@ class Player:
         return self.format_filepath(filepath)
 
     def get_film_path(self, film) -> str:
-        file_data = execute_query(f"select * from get_film_path({film})")
+        file_data = execute_query(f"select * from get_film_path('{film}')")
         filepath = Path(file_data[0][0])
         self.record_played_file(filepath)
         return self.format_filepath(filepath)
@@ -60,11 +60,11 @@ class Player:
 
     def get_film_options(self) -> list:
         film_data = execute_query("select distinct film from films")
-        return [x[0] for x in film_data]
+        return sorted([x[0] for x in film_data])
 
     def get_show_options(self) -> list:
         show_data = execute_query("select distinct show from shows")
-        return [x[0] for x in show_data]
+        return sorted([x[0] for x in show_data])
 
     def get_season_options(self, show: str) -> list:
         seasons_data = execute_query(
