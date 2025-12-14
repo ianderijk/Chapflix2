@@ -92,6 +92,12 @@ class Player:
             return "Show has not been watched, start from the beginning!"
         return f"{selection_data[0][0]}, Season {selection_data[0][1]} Episode {selection_data[0][2]}"
 
+    def get_next_episode(self) -> tuple[str | None, str | None]:
+        next_episode_data = execute_query("select * from get_next_episode()")
+        next_episode = next_episode_data[0][0]
+        if next_episode:
+            return self.format_filepath(next_episode), None
+        return None, None
 
 if __name__ == "__main__":
-    print("hello from player.py")
+    print("Hello from player")

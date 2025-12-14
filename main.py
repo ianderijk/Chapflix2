@@ -15,8 +15,8 @@ app.layout = html.Div(  # outer most div, whole page
                 html.Div(  # div containing the dropdowns
                     children=[
                         html.H2("Welcome to Chapflix"),
-                        # ,html.Button("Next episode", id = "LastPlayed", n_clicks = 0)
-                        html.H4(player.last_played_name, id="LastPlayedHeader"),
+                        html.Button("Next episode", id="AutoPlayNext", n_clicks=0),
+                        dcc.Markdown(id="LastPlayedHeader", children=player.last_played_name),
                         html.H5("Films"),
                         dcc.Dropdown(
                             id="FilmPicker",
@@ -79,6 +79,16 @@ app.layout = html.Div(  # outer most div, whole page
         ),
     ]
 )
+
+
+@app.callback(
+    Output(component_id="Player", component_property="src", allow_duplicate=True),
+    Input(component_id="AutoPlayNext", component_property="n_clicks"),
+)
+def play_from_last(n_clicks: int) -> None | str:
+    if n_clicks == 0:
+        return
+    return player.next_episode
 
 
 @app.callback(
