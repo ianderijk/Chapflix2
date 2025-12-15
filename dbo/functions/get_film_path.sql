@@ -1,4 +1,4 @@
-create function get_film_path(film text)
+create or replace function get_film_path(film text)
 returns table(
 file text
 )
