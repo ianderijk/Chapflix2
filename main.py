@@ -54,10 +54,6 @@ app.layout = html.Div(  # outer most div, whole page
                                 ),
                             ]
                         ),
-                        dcc.Markdown(
-                            id="CurrentSelection",
-                            children=None,
-                        ),
                         html.H5("Films"),
                         dcc.Dropdown(
                             id="FilmPicker",
@@ -135,7 +131,7 @@ def continue_watching(n_clicks: int) -> tuple[None | str, None | str]:
 
 @app.callback(
     Output(component_id="Player", component_property="src", allow_duplicate=True),
-    Output(component_id="CurrentSelection", component_property="children", allow_duplicate=True),
+    Output(component_id="ContinueWatchingText", component_property="children", allow_duplicate=True),
     Input(component_id="PreviousEpisode", component_property="n_clicks"),
 )
 def watch_previous_episode(n_clicks: int) -> tuple[None | str, None | str]:
@@ -146,7 +142,7 @@ def watch_previous_episode(n_clicks: int) -> tuple[None | str, None | str]:
 
 @app.callback(
     Output(component_id="Player", component_property="src", allow_duplicate=True),
-    Output(component_id="CurrentSelection", component_property="children", allow_duplicate=True),
+    Output(component_id="ContinueWatchingText", component_property="children", allow_duplicate=True),
     Input(component_id="NextEpisode", component_property="n_clicks"),
 )
 def watch_next_episode(n_clicks: int) -> tuple[None | str, None | str]:

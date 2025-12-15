@@ -103,7 +103,7 @@ class Player:
         show = last_played_data[0][3]
         season = last_played_data[0][4]
         episode = last_played_data[0][5]
-        display_string = f"{show}: Season {season} episode {episode}"
+        display_string = f"Now playing: {show} Season {season} episode {episode}"
         self.record_played_file(episode_path)
         return self.format_filepath(episode_path), display_string
 
@@ -114,7 +114,7 @@ class Player:
             show = next_episode_data[0][1]
             season = next_episode_data[0][2]
             episode = next_episode_data[0][3]
-            display_string = f"Next episode: {show} season {season}, episode {episode}"
+            display_string = f"Now playing: {show} season {season}, episode {episode}"
             self.record_played_file(next_episode_path)
             return self.format_filepath(next_episode_path), display_string
         return None, "There is nothing left to play! Time to pick another show."
@@ -127,7 +127,7 @@ class Player:
             season = previous_episode_data[0][2]
             episode = previous_episode_data[0][3]
             display_string = (
-                f"Previous episode: {show} season {season}, episode {episode}"
+                f"Now playing: {show} season {season}, episode {episode}"
             )
             self.record_played_file(previous_episode_path)
             return self.format_filepath(previous_episode_path), display_string
