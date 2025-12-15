@@ -1,4 +1,4 @@
-create function get_show_path(show_ text, season integer, episode integer)
+create or replace function get_show_path(show_ text, season integer, episode integer)
 returns table (
 file text
 )
