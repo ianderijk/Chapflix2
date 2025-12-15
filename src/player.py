@@ -1,7 +1,7 @@
 from __future__ import annotations
 from pathlib import Path
 from datetime import datetime
-from .dbconn import execute_query, execute_statement
+from src.dbconn import execute_query, execute_statement
 
 
 class Player:
@@ -9,6 +9,10 @@ class Player:
         self.set_playable_films()
         self.set_playable_shows()
         self.set_last_played()
+
+    def format_filepath(self, path: Path) -> str:
+        path_list = str(path).split("/")
+        return "/".join(path_list[path_list.index("assets") :])
 
     def set_last_played(self) -> None:
         """Sets both the last played file name and key. When last played is a show
@@ -19,6 +23,7 @@ class Player:
         self.last_played_key = last_played_data[0][1]
         if last_played_data[0][0] == "film":
             self.last_played_name = str(last_played_data[0][2])
+            self.last_played_file = self.format_filepath(last_played_data[0][6])
         else:
             show = str(last_played_data[0][3])
             season = last_played_data[0][4]
@@ -26,6 +31,7 @@ class Player:
             self.last_played_name = (
                 f"{show.title()} - Season {season} Episode {episode}"
             )
+            self.last_played_file = self.format_filepath(last_played_data[0][6])
 
     def record_played_file(self, file: Path) -> None:
         playtime = datetime.now()
@@ -36,10 +42,6 @@ class Player:
             INSERT INTO history (file_key, time) VALUES ({file_key}, '{playtime}')
             """
         )
-
-    def format_filepath(self, path: Path) -> str:
-        path_list = str(path).split("/")
-        return "/".join(path_list[path_list.index("assets") :])
 
     def get_show_path(self, show: str, season: int, episode: int) -> str:
         file_data = execute_query(
@@ -92,6 +94,45 @@ class Player:
             return "Show has not been watched, start from the beginning!"
         return f"{selection_data[0][0]}, Season {selection_data[0][1]} Episode {selection_data[0][2]}"
 
+    def get_continue_watching(self) -> tuple[str | None, str | None]:
+        last_played_data = execute_query("select * from get_last_played()")
+        media_type = last_played_data[0][0]
+        if media_type == "film":
+            return None, None
+        episode_path = last_played_data[0][6]
+        show = last_played_data[0][3]
+        season = last_played_data[0][4]
+        episode = last_played_data[0][5]
+        display_string = f"Now playing: {show} Season {season} episode {episode}"
+        self.record_played_file(episode_path)
+        return self.format_filepath(episode_path), display_string
+
+    def get_next_episode(self) -> tuple[str | None, str]:
+        next_episode_data = execute_query("select * from get_next_episode()")
+        next_episode_path = next_episode_data[0][0]
+        if next_episode_path:
+            show = next_episode_data[0][1]
+            season = next_episode_data[0][2]
+            episode = next_episode_data[0][3]
+            display_string = f"Now playing: {show} season {season}, episode {episode}"
+            self.record_played_file(next_episode_path)
+            return self.format_filepath(next_episode_path), display_string
+        return None, "There is nothing left to play! Time to pick another show."
+
+    def get_previous_episode(self) -> tuple[str | None, str]:
+        previous_episode_data = execute_query("select * from get_previous_episode()")
+        previous_episode_path = previous_episode_data[0][0]
+        if previous_episode_path:
+            show = previous_episode_data[0][1]
+            season = previous_episode_data[0][2]
+            episode = previous_episode_data[0][3]
+            display_string = (
+                f"Now playing: {show} season {season}, episode {episode}"
+            )
+            self.record_played_file(previous_episode_path)
+            return self.format_filepath(previous_episode_path), display_string
+        return None, "There is nothing left to play! Time to pick another show."
+
 
 if __name__ == "__main__":
-    print("hello from player.py")
+    print("Hello from player")
