@@ -15,8 +15,49 @@ app.layout = html.Div(  # outer most div, whole page
                 html.Div(  # div containing the dropdowns
                     children=[
                         html.H2("Welcome to Chapflix"),
-                        html.Button("Next episode", id="AutoPlayNext", n_clicks=0),
-                        dcc.Markdown(id="LastPlayedHeader", children=player.last_played_name),
+                        html.Div(
+                            children=[
+                                html.Div(
+                                    children=[
+                                        dcc.Markdown(
+                                            id="ContinueWatchingText",
+                                            children=f"Continue watching {player.last_played_name}",
+                                        ),
+                                        html.Button(
+                                            "Continue watching",
+                                            id="ContinueWatching",
+                                            n_clicks=0,
+                                        ),
+                                    ]
+                                ),
+                                html.Div(
+                                    children=[
+                                        dcc.Markdown(
+                                            id="PreviousEpisodeText", children=None
+                                        ),
+                                        html.Button(
+                                            "Previous episode",
+                                            id="PreviousEpisode",
+                                            n_clicks=0,
+                                        ),
+                                    ]
+                                ),
+                                html.Div(
+                                    children=[
+                                        dcc.Markdown(
+                                            id="NextEpisodeText", children=None
+                                        ),
+                                        html.Button(
+                                            "Next episode", id="NextEpisode", n_clicks=0
+                                        ),
+                                    ]
+                                ),
+                            ]
+                        ),
+                        dcc.Markdown(
+                            id="CurrentSelection",
+                            children=None,
+                        ),
                         html.H5("Films"),
                         dcc.Dropdown(
                             id="FilmPicker",
@@ -83,12 +124,35 @@ app.layout = html.Div(  # outer most div, whole page
 
 @app.callback(
     Output(component_id="Player", component_property="src", allow_duplicate=True),
-    Input(component_id="AutoPlayNext", component_property="n_clicks"),
+    Output(component_id="ContinueWatchingText", component_property="children"),
+    Input(component_id="ContinueWatching", component_property="n_clicks"),
 )
-def play_from_last(n_clicks: int) -> None | str:
+def continue_watching(n_clicks: int) -> tuple[None | str, None | str]:
     if n_clicks == 0:
-        return
-    return player.next_episode
+        return None, player.last_played_name
+    return player.get_continue_watching()
+
+
+@app.callback(
+    Output(component_id="Player", component_property="src", allow_duplicate=True),
+    Output(component_id="CurrentSelection", component_property="children", allow_duplicate=True),
+    Input(component_id="PreviousEpisode", component_property="n_clicks"),
+)
+def watch_previous_episode(n_clicks: int) -> tuple[None | str, None | str]:
+    if n_clicks == 0:
+        return None, None
+    return player.get_previous_episode()
+
+
+@app.callback(
+    Output(component_id="Player", component_property="src", allow_duplicate=True),
+    Output(component_id="CurrentSelection", component_property="children", allow_duplicate=True),
+    Input(component_id="NextEpisode", component_property="n_clicks"),
+)
+def watch_next_episode(n_clicks: int) -> tuple[None | str, None | str]:
+    if n_clicks == 0:
+        return None, None
+    return player.get_next_episode()
 
 
 @app.callback(
@@ -104,11 +168,6 @@ def play_film(film: str) -> None | str:
 
 
 @app.callback(
-    Output(
-        component_id="LastPlayedHeader",
-        component_property="value",
-        allow_duplicate=True,
-    ),
     Output(component_id="SeasonPicker", component_property="options"),
     Output(component_id="SeasonPicker", component_property="value"),
     Input(component_id="ShowPicker", component_property="value"),
@@ -116,11 +175,10 @@ def play_film(film: str) -> None | str:
 def update_seasons(show: str) -> tuple:
     if show and show != "Pick a show":
         return (
-            player.get_selection_last_played(show),
             player.get_season_options(show),
             None,
         )
-    return player.last_played_name, [], None
+    return [], None
 
 
 @app.callback(
