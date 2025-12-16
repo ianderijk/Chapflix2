@@ -1,3 +1,73 @@
+"""
+This module defines the Player class, which manages the playback of films and shows.
+It interacts with a database to retrieve information about media content, record playback history,
+and provide options for users to select films and shows.
+
+Classes:
+    Player: A class that handles the playback of films and shows, including functionalities
+            to retrieve media paths, record playback history, and manage user selections.
+
+Methods:
+    __init__: Initializes the Player instance, setting up playable films and shows, and
+              retrieving the last played media.
+    
+    format_filepath(path: Path) -> str:
+        Formats the given file path to a relative path starting from the 'assets' directory.
+
+    set_last_played() -> None:
+        Retrieves and sets the last played media's name and file path, handling both films
+        and shows appropriately.
+
+    record_played_file(file: Path) -> None:
+        Records the playback of a specified file in the history database with the current timestamp.
+
+    get_show_path(show: str, season: int, episode: int) -> str:
+        Retrieves the file path for a specific show episode and records it as played.
+
+    get_film_path(film) -> str:
+        Retrieves the file path for a specified film and records it as played.
+
+    drop_down_lists(lst: list) -> list:
+        Converts a list of strings into a list of dictionaries suitable for dropdown options.
+
+    get_film_options() -> list:
+        Retrieves a sorted list of distinct film titles available in the database.
+
+    get_show_options() -> list:
+        Retrieves a sorted list of distinct show titles available in the database.
+
+    get_season_options(show: str) -> list:
+        Retrieves a list of distinct seasons for a specified show.
+
+    get_episode_options(show: str, season: int) -> list:
+        Retrieves a list of distinct episodes for a specified show and season.
+
+    set_playable_films() -> None:
+        Initializes the list of playable films for the app's dropdown menu.
+
+    set_playable_shows() -> None:
+        Initializes the list of playable shows for the app's dropdown menu.
+
+    get_selection_last_played(selection: str) -> str:
+        Retrieves the last watched episode of a specified show, or a message if not watched.
+
+    get_continue_watching() -> tuple[str | None, str | None]:
+        Retrieves the last played media and returns its file path and a display string,
+        or None if the last played media is a film.
+
+    get_next_episode() -> tuple[str | None, str]:
+        Retrieves the next episode to be watched, returning its file path and a display string,
+        or a message if there are no episodes left.
+
+    get_previous_episode() -> tuple[str | None, str]:
+        Retrieves the previous episode watched, returning its file path and a display string,
+        or a message if there are no previous episodes left.
+
+Usage:
+    This module is intended to be used as part of a media player application, allowing users
+    to navigate through films and shows, track their viewing history, and manage their media
+    selections effectively.
+"""
 from __future__ import annotations
 from pathlib import Path
 from datetime import datetime

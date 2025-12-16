@@ -100,9 +100,17 @@ class Migration:
             "-i",
             KEY_PATH,
             TARGET_ADDRESS,
-            "cd /media/ianderijk/Backup/Chapflix2/ && python3 -m src.dbconn",
+            "cd /media/ianderijk/Backup/Chapflix2/ && /media/ianderijk/Backup/Chapflix2/.venv/bin/python3 -m src.dbconn",
         ]
         subprocess.run(command)
+        restart_system = [
+            "ssh",
+            "-i",
+            KEY_PATH,
+            TARGET_ADDRESS,
+            "sudo systemctl restart chapflix.service"
+        ]
+        subprocess.run(restart_system)
 
     def main(self) -> None:
         self.create_missing_folders()
