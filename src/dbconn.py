@@ -1,8 +1,81 @@
+"""
+Database Connection and Content Management Module
+
+This module handles all database operations for the Chapflix application, including
+connection management, schema initialization, and content (films/shows) data aggregation
+and persistence.
+
+The module provides utilities to:
+- Execute SQL statements and queries against a PostgreSQL database
+- Build and initialize database tables via stored procedures
+- Gather media content from the file system
+- Distinguish between films (single file per folder) and shows (multiple files per folder)
+- Support both initial full loads and incremental updates of content data
+- Extract episode information (season/episode numbers) from file naming conventions
+
+Environment Variables:
+    DATABASE_URL: Connection string for the PostgreSQL database
+
+Module-level Variables:
+    MEDIA_FILES (Path): Path to the assets directory containing media folders
+    db (Engine): SQLAlchemy database engine instance
+
+Functions:
+    execute_statement(statement: str, engine: Engine = db) -> None
+        Execute SQL statements that don't return results (CREATE, INSERT, UPDATE, DELETE)
+    
+    execute_query(query: str, engine: Engine = db) -> Sequence[Row[Any]]
+        Execute SQL queries that return results
+    
+    build_tables() -> None
+        Initialize database schema by calling the create_schema_tables stored procedure
+    
+    gather_content() -> list
+        Retrieve all media file paths from assets directory (excluding images folder)
+    
+    write_contents_data() -> None
+        Perform initial insert of all content file paths into the content table
+    
+    incremental_gather_content() -> list
+        Identify new content files not already in the database
+    
+    incremental_write_contents_data() -> None
+        Insert newly discovered content files into the content table
+    
+    gather_shows_data() -> dict[str, list[str]]
+        Group media files into shows (folders with multiple files)
+    
+    gather_films_data() -> dict[str, list[str]]
+        Group media files into films (folders with single files)
+    
+    incremental_gather_shows_data() -> dict
+        Identify new show files that need to be added to the database
+    
+    incremental_gather_films_data() -> dict
+        Identify new film files that need to be added to the database
+    
+    episode_data(episode_file: Path) -> tuple
+        Parse season and episode numbers from file naming convention (e.g., S01E05)
+    
+    write_films_shows_data(incremental: bool) -> None
+        Insert show and film metadata into respective database tables
+    
+    initial_build() -> None
+        Perform complete database initialization and initial data load
+    
+    incremental_build() -> None
+        Update database with newly discovered content
+
+Note:
+    The module currently uses string formatting for SQL queries, which may be
+    vulnerable to SQL injection. Consider parameterized queries for production use.
+"""
 from __future__ import annotations
 from pathlib import Path
 import os
 from sqlalchemy import Engine, text, create_engine
 from dotenv import load_dotenv
+from typing import Any
 
 
 load_dotenv()
@@ -81,7 +154,7 @@ def incremental_write_contents_data() -> None:
                           );""")
 
 
-def gather_shows_data() -> dict:
+def gather_shows_data() -> dict[str, list[str]]:
     results = {}
     folders = os.listdir(MEDIA_FILES)
     for x in folders:
@@ -97,7 +170,7 @@ def gather_shows_data() -> dict:
     return results
 
 
-def gather_films_data() -> dict:
+def gather_films_data() -> dict[str, list[str]]:
     results = {}
     folders = os.listdir(MEDIA_FILES)
     for x in folders:

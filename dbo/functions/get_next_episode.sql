@@ -1,3 +1,35 @@
+/**
+ * Function: get_next_episode()
+ * 
+ * Description:
+ *   Retrieves the next episode to play based on the user's last played episode.
+ *   Handles both continuation within the same season and progression to the next season.
+ *
+ * Returns:
+ *   Table with columns:
+ *   - file (text): File path of the next episode
+ *   - show (text): Name of the show
+ *   - season (integer): Season number
+ *   - episode (integer): Episode number
+ *
+ * Logic:
+ *   1. Fetches the user's last played episode via get_last_played()
+ *   2. Determines the maximum episode in the current season
+ *   3. If the last played episode is not the season finale:
+ *      - Returns the next episode in the same season
+ *   4. If the last played episode is the season finale and a next season exists:
+ *      - Returns the first episode of the next season
+ *   5. Otherwise returns null values
+ *
+ * Dependencies:
+ *   - get_last_played() function
+ *   - shows table
+ *   - content table
+ *
+ * Author: [Author Name]
+ * Created: [Date]
+ * Last Modified: [Date]
+ */
 create or replace function get_next_episode()
 returns table (
 file text,

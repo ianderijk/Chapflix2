@@ -1,3 +1,28 @@
+/**
+ * get_last_played()
+ * 
+ * Description:
+ *   Retrieves the most recently played media item from the viewing history.
+ *   Returns details about either a film or show episode, including associated file information.
+ * 
+ * Returns:
+ *   Table with the following columns:
+ *   - media_type (text): Type of media - either 'film' or 'show'
+ *   - file_key (integer): Unique identifier for the media file
+ *   - film (text): Film title if media_type is 'film', NULL otherwise
+ *   - show (text): Show title if media_type is 'show', NULL otherwise
+ *   - season (integer): Season number if media_type is 'show', NULL otherwise
+ *   - episode (integer): Episode number if media_type is 'show', NULL otherwise
+ *   - file (text): File path or name of the media content
+ * 
+ * Example:
+ *   SELECT * FROM get_last_played();
+ * 
+ * Notes:
+ *   - Returns only the single most recently viewed item (LIMIT 1)
+ *   - Results are ordered by history timestamp in descending order
+ *   - Uses LEFT JOINs to accommodate both film and show media types
+ */
 create or replace function get_last_played()
 returns table(
 media_type text,
