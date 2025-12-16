@@ -126,9 +126,7 @@ class Player:
             show = previous_episode_data[0][1]
             season = previous_episode_data[0][2]
             episode = previous_episode_data[0][3]
-            display_string = (
-                f"Now playing: {show} season {season}, episode {episode}"
-            )
+            display_string = f"Now playing: {show} season {season}, episode {episode}"
             self.record_played_file(previous_episode_path)
             return self.format_filepath(previous_episode_path), display_string
         return None, "There is nothing left to play! Time to pick another show."
