@@ -89,20 +89,19 @@ class Migration:
         for x, y in files_to_migrate:
             command = ["scp", "-i", KEY_PATH, x, f"{TARGET_ADDRESS}:{y}"]
             result = subprocess.run(command, capture_output=True, text=True)
-            print(result.stdout)
-            print(result.stderr)
             if result.returncode == 0:
                 pass
             else:
                 raise Exception(f"Failed to copy {x} to {y}")
-            
+
     def add_files_to_database(self) -> None:
         command = [
             "ssh",
-            "-i", KEY_PATH,
+            "-i",
+            KEY_PATH,
             TARGET_ADDRESS,
-            "cd /media/ianderijk/Backup/Chapflix2/ && python3 -m src.dbconn" 
-            ]
+            "cd /media/ianderijk/Backup/Chapflix2/ && python3 -m src.dbconn",
+        ]
         subprocess.run(command)
 
     def main(self) -> None:
