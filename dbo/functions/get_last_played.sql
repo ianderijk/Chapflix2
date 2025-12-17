@@ -23,7 +23,7 @@
  *   - Results are ordered by history timestamp in descending order
  *   - Uses LEFT JOINs to accommodate both film and show media types
  */
-create or replace function get_last_played()
+create or replace function get_last_played(usr_id integer)
 returns table(
 media_type text,
 file_key integer,
@@ -46,6 +46,7 @@ from history h
 left join shows s on h.file_key = s.file_key
 left join films f on h.file_key = f.file_key
 left join content c on h.file_key = c.file_key
+where h.user_id = usr_id
 order by time desc
 limit 1
 $$

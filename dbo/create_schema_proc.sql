@@ -28,5 +28,17 @@ begin
 		time timestamp,
 		foreign key (file_key) references content(file_key)
 	);
+
+	create table if not exists users (
+		user_id serial primary key,
+		display_name text
+	);
+	insert into users (display_name) values ('Lady', 'Chap');
+
+	create table if not exists paused_content (
+		play_num integer,
+		user_id integer,
+		video_progress interval
+	);
 end;
 $$;

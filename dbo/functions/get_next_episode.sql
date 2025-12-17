@@ -30,7 +30,7 @@
  * Created: [Date]
  * Last Modified: [Date]
  */
-create or replace function get_next_episode()
+create or replace function get_next_episode(usr_id integer)
 returns table (
 file text,
 show text,
@@ -41,7 +41,7 @@ as
 $$
 with last_played as (
 	select *
-	from get_last_played()
+	from get_last_played(usr_id)
 )
 ,max_episode_in_season as (
 	select show
