@@ -97,7 +97,9 @@ class Player:
         the string is formatted to include the show name, season number and episode.
         Films are returned as a string of the film name. File key attribute is simply
         the relevant file key regardless of content type"""
-        last_played_data = execute_query(f"select * from get_last_played({self.user_id})")
+        last_played_data = execute_query(
+            f"select * from get_last_played({self.user_id})"
+        )
         self.last_played_key = last_played_data[0][1]
         if last_played_data[0][0] == "film":
             self.last_played_name = str(last_played_data[0][2])
@@ -174,7 +176,9 @@ class Player:
         return f"{selection_data[0][0]}, Season {selection_data[0][1]} Episode {selection_data[0][2]}"
 
     def get_continue_watching(self) -> tuple[str | None, str | None]:
-        last_played_data = execute_query(f"select * from get_last_played({self.user_id})")
+        last_played_data = execute_query(
+            f"select * from get_last_played({self.user_id})"
+        )
         media_type = last_played_data[0][0]
         if media_type == "film":
             return None, None
@@ -187,7 +191,9 @@ class Player:
         return self.format_filepath(episode_path), display_string
 
     def get_next_episode(self) -> tuple[str | None, str]:
-        next_episode_data = execute_query(f"select * from get_next_episode({self.user_id})")
+        next_episode_data = execute_query(
+            f"select * from get_next_episode({self.user_id})"
+        )
         next_episode_path = next_episode_data[0][0]
         if next_episode_path:
             show = next_episode_data[0][1]
@@ -199,7 +205,9 @@ class Player:
         return None, "There is nothing left to play! Time to pick another show."
 
     def get_previous_episode(self) -> tuple[str | None, str]:
-        previous_episode_data = execute_query(f"select * from get_previous_episode({self.user_id})")
+        previous_episode_data = execute_query(
+            f"select * from get_previous_episode({self.user_id})"
+        )
         previous_episode_path = previous_episode_data[0][0]
         if previous_episode_path:
             show = previous_episode_data[0][1]

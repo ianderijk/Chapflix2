@@ -43,3 +43,10 @@ create table if not exists paused_content (
 ```
 - function get_last_played() has changed, need to drop it and recreate
 - both next and previous episode sql functions have changed so need dropping and recreating. probably best to just run the reset functions script now.
+
+
+- DROP THE WHOLE FUCKING DATABASE. IT NEEDS REBUILDING BECAUSE THE CONTENT HAS MOVED TO A DIRECTORY CALLED CONTENTS.
+Turns out, injecting js from the assets folder is easy. So easy that it's time to drop the entire fucking thing and rebuild it all. Drop the database. Create a new database called chapflix. Create the stored procedure within the db environment then run the dbconn module with the initial_build function.
+Important to note that you can't carry empty directories that are awaiting content - they break the database build routine. Don't worry - the code's fine you just didn't think about empty directories.
+Another important thing to note is that dummy values need adding to the history table for each user because the app expects them to exist when loading.
+Remember, you'll need to drop and recreate all the functions using the shell script BUT that means creating and altering the buildusr first :upsidedown smiley:

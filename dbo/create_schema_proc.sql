@@ -26,6 +26,7 @@ begin
 		play_num serial primary key,
 		file_key integer,
 		time timestamp,
+		user_id integer,
 		foreign key (file_key) references content(file_key)
 	);
 
@@ -33,7 +34,6 @@ begin
 		user_id serial primary key,
 		display_name text
 	);
-	insert into users (display_name) values ('Lady', 'Chap');
 
 	create table if not exists paused_content (
 		play_num integer,

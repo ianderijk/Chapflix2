@@ -114,37 +114,11 @@ app.layout = html.Div(  # outer most div, whole page
                             style={"display": "none"},
                         ),
                         dcc.Store(id="VideoProgressStore", storage_type="session"),
-                        dcc.Store(id="RedundantOutputStorer", storage_type="session"),
+                        dcc.Store(id="RedundantOutputStore", storage_type="session"),
                         # this is only needed because an output element is required for the write_paused_time callback and
                         # i'd rather add a random element than get any deeper into js than i already am.
                         html.Video(controls=True, id="Player", src=None),
-                        html.Script("""
-                            console.log("Script loaded");
-                                document.addEventListener("fullscreenchange", function() {
-                                    let video = document.getElementById("Player");
-                                    if (document.fullscreenElement && document.fullscreenElement === video) {
-                                        video.controls = false;
-                                    } else {
-                                        video.controls = true;
-                                    }
-                                });
-
-                                window.addEventListener("load", function() {
-                                    let video = document.getElementById("Player");
-                                    if (video) {
-                                        console.log("Attaching pause handler");
-                                        video.addEventListener("pause", function() {
-                                            let progress = video.currentTime;
-                                            console.log("Paused at:", progress);
-                                            let input = document.getElementById("VideoProgressInput");
-                                            input.value = progress;
-                                            input.dispatchEvent(new Event('input', { bubbles: true }));
-                                        });
-                                    } else {
-                                        console.log("Video element not found at load");
-                                    }
-                                });
-                        """),
+                        html.Script(src="/assets/custom.js"),
                     ],
                     style={
                         "width": "100%",
@@ -166,7 +140,11 @@ app.layout = html.Div(  # outer most div, whole page
 
 
 @app.callback(
-    Output(component_id="ContinueWatchingText", component_property="children", allow_duplicate=True),
+    Output(
+        component_id="ContinueWatchingText",
+        component_property="children",
+        allow_duplicate=True,
+    ),
     Input(component_id="users", component_property="value"),
 )
 def set_user(user: str) -> str:
@@ -178,7 +156,11 @@ def set_user(user: str) -> str:
 
 @app.callback(
     Output(component_id="Player", component_property="src", allow_duplicate=True),
-    Output(component_id="ContinueWatchingText", component_property="children", allow_duplicate=True),
+    Output(
+        component_id="ContinueWatchingText",
+        component_property="children",
+        allow_duplicate=True,
+    ),
     Input(component_id="ContinueWatching", component_property="n_clicks"),
     Input(component_id="users", component_property="value", allow_optional=False),
 )
@@ -279,7 +261,9 @@ def update_episodes(show: str, season: int) -> tuple:
     Input(component_id="EpisodePicker", component_property="value"),
     Input(component_id="users", component_property="value", allow_optional=False),
 )
-def play_episode(show: str, season: int, episode: int, user: str) -> tuple[None | str, None | str]:
+def play_episode(
+    show: str, season: int, episode: int, user: str
+) -> tuple[None | str, None | str]:
     if not user:
         return None, None
     elif not show or show == "Pick a show" or not season or not episode:
@@ -302,7 +286,7 @@ app.clientside_callback(
 
 @app.callback(
     Output(
-        component_id="RedundantOutputStorer",
+        component_id="RedundantOutputStore",
         component_property="data",
         allow_duplicate=True,
     ),
@@ -310,6 +294,7 @@ app.clientside_callback(
 )
 def write_pasued_time(pause_time: str) -> None:
     print(pause_time)
+    print("da fuck?")
 
 
 if __name__ == "__main__":
