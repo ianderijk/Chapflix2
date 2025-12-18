@@ -23,46 +23,46 @@ Module-level Variables:
 Functions:
     execute_statement(statement: str, engine: Engine = db) -> None
         Execute SQL statements that don't return results (CREATE, INSERT, UPDATE, DELETE)
-    
+
     execute_query(query: str, engine: Engine = db) -> Sequence[Row[Any]]
         Execute SQL queries that return results
-    
+
     build_tables() -> None
         Initialize database schema by calling the create_schema_tables stored procedure
-    
+
     gather_content() -> list
         Retrieve all media file paths from assets directory (excluding images folder)
-    
+
     write_contents_data() -> None
         Perform initial insert of all content file paths into the content table
-    
+
     incremental_gather_content() -> list
         Identify new content files not already in the database
-    
+
     incremental_write_contents_data() -> None
         Insert newly discovered content files into the content table
-    
+
     gather_shows_data() -> dict[str, list[str]]
         Group media files into shows (folders with multiple files)
-    
+
     gather_films_data() -> dict[str, list[str]]
         Group media files into films (folders with single files)
-    
+
     incremental_gather_shows_data() -> dict
         Identify new show files that need to be added to the database
-    
+
     incremental_gather_films_data() -> dict
         Identify new film files that need to be added to the database
-    
+
     episode_data(episode_file: Path) -> tuple
         Parse season and episode numbers from file naming convention (e.g., S01E05)
-    
+
     write_films_shows_data(incremental: bool) -> None
         Insert show and film metadata into respective database tables
-    
+
     initial_build() -> None
         Perform complete database initialization and initial data load
-    
+
     incremental_build() -> None
         Update database with newly discovered content
 
@@ -70,18 +70,21 @@ Note:
     The module currently uses string formatting for SQL queries, which may be
     vulnerable to SQL injection. Consider parameterized queries for production use.
 """
+
 from __future__ import annotations
+from sqlalchemy.sql.operators import sub
 from pathlib import Path
 import os
 from sqlalchemy import Engine, text, create_engine
 from dotenv import load_dotenv
-from typing import Any
+from datetime import datetime
+import subprocess
 
 
 load_dotenv()
 
 
-MEDIA_FILES = Path(os.path.join(Path(__file__).parent.parent), "assets")
+MEDIA_FILES = Path(os.path.join(Path(__file__).parent.parent), "assets", "content")
 db = create_engine(str(os.getenv("DATABASE_URL")))
 
 
@@ -102,6 +105,19 @@ def execute_query(query: str, engine: Engine = db):
 
 def build_tables() -> None:
     execute_statement("call create_schema_tables()")
+
+
+def insert_users() -> None:
+    execute_statement("insert into users (display_name) values ('Lady'), ('Chap');")
+
+
+def insert_dummy_history_records() -> None:
+    execute_statement(
+        f"insert into history (file_key, time, user_id) values (1, '{datetime.now()}', 1)"
+    )
+    execute_statement(
+        f"insert into history (file_key, time, user_id) values (1, '{datetime.now()}', 2)"
+    )
 
 
 def gather_content() -> list:
@@ -262,10 +278,18 @@ def write_films_shows_data(incremental: bool) -> None:
         )
 
 
+def build_functions() -> None:
+    shell_path = os.path.join(Path(__file__).parent.parent, "dbo", "reset_functions.sh")
+    subprocess.run(["bash", shell_path])
+
+
 def initial_build() -> None:
     build_tables()
+    insert_users()
     write_contents_data()
     write_films_shows_data(False)
+    insert_dummy_history_records()
+    build_functions()
 
 
 def incremental_build() -> None:
@@ -274,4 +298,4 @@ def incremental_build() -> None:
 
 
 if __name__ == "__main__":
-    incremental_build()
+    initial_build()

@@ -26,7 +26,19 @@ begin
 		play_num serial primary key,
 		file_key integer,
 		time timestamp,
+		user_id integer,
 		foreign key (file_key) references content(file_key)
+	);
+
+	create table if not exists users (
+		user_id serial primary key,
+		display_name text
+	);
+
+	create table if not exists paused_content (
+		play_num integer,
+		user_id integer,
+		video_progress decimal
 	);
 end;
 $$;

@@ -2,8 +2,12 @@ from __future__ import annotations
 import os
 import subprocess
 
-SOURCE_ROOT = os.path.join("/media", "idr", "ExtDrive", "Chapflix", "assets")
-TARGET_ROOT = os.path.join("/media", "ianderijk", "Backup", "Chapflix2", "assets")
+SOURCE_ROOT = os.path.join(
+    "/media", "idr", "ExtDrive", "Chapflix2", "assets", "content"
+)
+TARGET_ROOT = os.path.join(
+    "/media", "ianderijk", "Backup", "Chapflix2", "assets", "content"
+)
 KEY_PATH = os.path.join("/home", "idr", ".ssh", "id_rsa_target")
 TARGET_ADDRESS = "ianderijk@192.168.0.29"
 
@@ -108,7 +112,7 @@ class Migration:
             "-i",
             KEY_PATH,
             TARGET_ADDRESS,
-            "sudo systemctl restart chapflix.service"
+            "sudo systemctl restart chapflix.service",
         ]
         subprocess.run(restart_system)
 

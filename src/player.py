@@ -10,7 +10,7 @@ Classes:
 Methods:
     __init__: Initializes the Player instance, setting up playable films and shows, and
               retrieving the last played media.
-    
+
     format_filepath(path: Path) -> str:
         Formats the given file path to a relative path starting from the 'assets' directory.
 
@@ -68,6 +68,7 @@ Usage:
     to navigate through films and shows, track their viewing history, and manage their media
     selections effectively.
 """
+
 from __future__ import annotations
 from pathlib import Path
 from datetime import datetime
@@ -78,18 +79,27 @@ class Player:
     def __init__(self):
         self.set_playable_films()
         self.set_playable_shows()
-        self.set_last_played()
+        self.user_id: None | int = None
 
     def format_filepath(self, path: Path) -> str:
         path_list = str(path).split("/")
         return "/".join(path_list[path_list.index("assets") :])
 
-    def set_last_played(self) -> None:
+    def set_user(self, display_name: str) -> None:
+        user_id_data = execute_query(
+            f"select user_id from users where display_name = '{display_name}'"
+        )
+        self.user_id = int(user_id_data[0][0])
+        self.user_display_name = display_name
+
+    def get_last_played(self) -> str:
         """Sets both the last played file name and key. When last played is a show
         the string is formatted to include the show name, season number and episode.
         Films are returned as a string of the film name. File key attribute is simply
         the relevant file key regardless of content type"""
-        last_played_data = execute_query("select * from get_last_played()")
+        last_played_data = execute_query(
+            f"select * from get_last_played({self.user_id})"
+        )
         self.last_played_key = last_played_data[0][1]
         if last_played_data[0][0] == "film":
             self.last_played_name = str(last_played_data[0][2])
@@ -102,6 +112,13 @@ class Player:
                 f"{show.title()} - Season {season} Episode {episode}"
             )
             self.last_played_file = self.format_filepath(last_played_data[0][6])
+        return self.last_played_name
+
+    def set_latest_play_num(self) -> None:
+        play_num_data = execute_query(
+            f"select play_num from history where user_id = {self.user_id} order by time desc limit 1"
+        )
+        self.current_play_num = play_num_data[0][0]
 
     def record_played_file(self, file: Path) -> None:
         playtime = datetime.now()
@@ -109,8 +126,14 @@ class Player:
         file_key = file_data[0][0]
         execute_statement(
             f"""
-            INSERT INTO history (file_key, time) VALUES ({file_key}, '{playtime}')
+            INSERT INTO history (file_key, time, user_id) VALUES ({file_key}, '{playtime}', {self.user_id})
             """
+        )
+        self.set_latest_play_num()
+
+    def record_paused_file(self, seconds: float) -> None:
+        execute_statement(
+            f"insert into paused_content (play_num, user_id, video_progress) values ({self.current_play_num}, {self.user_id}, {seconds})"
         )
 
     def get_show_path(self, show: str, season: int, episode: int) -> str:
@@ -164,8 +187,16 @@ class Player:
             return "Show has not been watched, start from the beginning!"
         return f"{selection_data[0][0]}, Season {selection_data[0][1]} Episode {selection_data[0][2]}"
 
+    def get_continue_watching_from(self) -> float:
+        seconds_data = execute_query(
+            f"select video_progress from paused_content where user_id = {self.user_id} order by play_num desc, video_progress desc limit 1"
+        )
+        return seconds_data[0][0]
+
     def get_continue_watching(self) -> tuple[str | None, str | None]:
-        last_played_data = execute_query("select * from get_last_played()")
+        last_played_data = execute_query(
+            f"select * from get_last_played({self.user_id})"
+        )
         media_type = last_played_data[0][0]
         if media_type == "film":
             return None, None
@@ -178,7 +209,9 @@ class Player:
         return self.format_filepath(episode_path), display_string
 
     def get_next_episode(self) -> tuple[str | None, str]:
-        next_episode_data = execute_query("select * from get_next_episode()")
+        next_episode_data = execute_query(
+            f"select * from get_next_episode({self.user_id})"
+        )
         next_episode_path = next_episode_data[0][0]
         if next_episode_path:
             show = next_episode_data[0][1]
@@ -190,7 +223,9 @@ class Player:
         return None, "There is nothing left to play! Time to pick another show."
 
     def get_previous_episode(self) -> tuple[str | None, str]:
-        previous_episode_data = execute_query("select * from get_previous_episode()")
+        previous_episode_data = execute_query(
+            f"select * from get_previous_episode({self.user_id})"
+        )
         previous_episode_path = previous_episode_data[0][0]
         if previous_episode_path:
             show = previous_episode_data[0][1]

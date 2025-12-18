@@ -1,10 +1,40 @@
-from dash import dcc, html
+from dash import dcc, html, State
+from dash_extensions import EventListener
 from dash.dependencies import Input, Output
 from flask import Flask
 import dash
+import logging
+import os
+from datetime import datetime
+from pathlib import Path
 from src.player import Player
 
+
 player = Player()
+logger = logging.getLogger(os.path.join(Path(__name__).parent, "app.log"))
+logger.setLevel(logging.INFO)
+
+
+def default_event_listener(file: str | None) -> EventListener | None:
+    if not file:
+        return
+    return EventListener(
+        id="VideoEvents",
+        events=[
+            {"event": "pause", "props": ["target.currentTime"]},
+            {"event": "loadedmetadata"},
+        ],
+        logging=True,
+        children=[
+            html.Video(
+                controls=True,
+                id="Player",
+                src=file,
+                autoPlay=True,
+            ),
+        ],
+    )
+
 
 server = Flask(__name__)
 app = dash.Dash(server=server, prevent_initial_callbacks=True)
@@ -19,9 +49,21 @@ app.layout = html.Div(  # outer most div, whole page
                             children=[
                                 html.Div(
                                     children=[
+                                        dcc.Dropdown(
+                                            id="users",
+                                            options=[
+                                                {"label": "Lady", "value": "Lady"},
+                                                {"label": "Chap", "value": "Chap"},
+                                            ],
+                                            placeholder="Pick a user",
+                                        )
+                                    ]
+                                ),
+                                html.Div(
+                                    children=[
                                         dcc.Markdown(
                                             id="ContinueWatchingText",
-                                            children=f"Continue watching {player.last_played_name}",
+                                            children=None,
                                         ),
                                         html.Button(
                                             "Continue watching",
@@ -33,7 +75,7 @@ app.layout = html.Div(  # outer most div, whole page
                                 html.Div(
                                     children=[
                                         dcc.Markdown(
-                                            id="PreviousEpisodeText", children=None
+                                            id="PreviousEpisodeText", children=""
                                         ),
                                         html.Button(
                                             "Previous episode",
@@ -58,6 +100,7 @@ app.layout = html.Div(  # outer most div, whole page
                         dcc.Dropdown(
                             id="FilmPicker",
                             options=player.playable_films,
+                            placeholder="Pick a film",
                             value="Pick a film",
                         ),
                         html.H5("TV Shows"),
@@ -65,6 +108,7 @@ app.layout = html.Div(  # outer most div, whole page
                             id="ShowPicker",
                             options=player.playable_shows,
                             value="Pick a show",
+                            placeholder="Pick a show",
                         ),
                         dcc.Dropdown(id="SeasonPicker", options=[], value=None),
                         dcc.Dropdown(id="EpisodePicker", options=[], value=None),
@@ -86,26 +130,12 @@ app.layout = html.Div(  # outer most div, whole page
         ),
         html.Div(  # div container for the video player
             children=[
-                html.Div(  # div containing the video player
-                    children=[
-                        html.Video(controls=True, id="Player", src=None),
-                        html.Script("""
-                    document.addEventListener("fullscreenchange", function() {
-                                let video = document.getElementById("Player");
-                                if (document.fullscreenElement && document.fullscreenElement === video) {
-                                    video.controls = false;
-                                } else {
-                                    video.controls = true;
-                                }
-                            });"""),
-                    ],
-                    style={
-                        "width": "100%",
-                        "display": "inline-block",
-                        "vertical-align": "bottom",
-                        "align": "center",
-                    },
-                )
+                html.Script(src="/assets/custom.js"),
+                EventListener(id="VideoEvents"),
+                dcc.Store(id="RedundantOutputStore", storage_type="session"),
+                html.Div(
+                    id="VideoContainer",
+                ),
             ],
             style={
                 "width": "100%",
@@ -119,56 +149,114 @@ app.layout = html.Div(  # outer most div, whole page
 
 
 @app.callback(
-    Output(component_id="Player", component_property="src", allow_duplicate=True),
-    Output(component_id="ContinueWatchingText", component_property="children"),
-    Input(component_id="ContinueWatching", component_property="n_clicks"),
+    Output(
+        component_id="ContinueWatchingText",
+        component_property="children",
+        allow_duplicate=True,
+    ),
+    Input(component_id="users", component_property="value"),
 )
-def continue_watching(n_clicks: int) -> tuple[None | str, None | str]:
-    if n_clicks == 0:
-        return None, player.last_played_name
-    return player.get_continue_watching()
+def set_user(user: str) -> str:
+    if user:
+        player.set_user(user)
+        return player.get_last_played()
+    return ""
 
 
 @app.callback(
-    Output(component_id="Player", component_property="src", allow_duplicate=True),
+    Output(
+        component_id="VideoContainer",
+        component_property="children",
+        allow_duplicate=True,
+    ),
+    Output(
+        component_id="ContinueWatchingText",
+        component_property="children",
+        allow_duplicate=True,
+    ),
+    Input(component_id="ContinueWatching", component_property="n_clicks"),
+    State(component_id="users", component_property="value"),
+)
+def continue_watching(
+    n_clicks: int, user: str
+) -> tuple[None | EventListener, str | None]:
+    if not user:
+        return None, None
+    elif n_clicks == 0:
+        return None, None
+    file, display_string = player.get_continue_watching()
+    seconds = player.get_continue_watching_from()
+    file = f"{file}#t={seconds}"
+    return default_event_listener(file), display_string
+
+
+@app.callback(
+    Output(
+        component_id="VideoContainer",
+        component_property="children",
+        allow_duplicate=True,
+    ),
     Output(
         component_id="ContinueWatchingText",
         component_property="children",
         allow_duplicate=True,
     ),
     Input(component_id="PreviousEpisode", component_property="n_clicks"),
+    Input(component_id="users", component_property="value", allow_optional=False),
 )
-def watch_previous_episode(n_clicks: int) -> tuple[None | str, None | str]:
-    if n_clicks == 0:
+def watch_previous_episode(
+    n_clicks: int, user: str
+) -> tuple[None | EventListener, None | str]:
+    if not user:
         return None, None
-    return player.get_previous_episode()
+    elif n_clicks == 0:
+        return None, None
+    file, display_string = player.get_previous_episode()
+    return default_event_listener(file), display_string
 
 
 @app.callback(
-    Output(component_id="Player", component_property="src", allow_duplicate=True),
+    Output(
+        component_id="VideoContainer",
+        component_property="children",
+        allow_duplicate=True,
+    ),
     Output(
         component_id="ContinueWatchingText",
         component_property="children",
         allow_duplicate=True,
     ),
     Input(component_id="NextEpisode", component_property="n_clicks"),
+    Input(component_id="users", component_property="value", allow_optional=False),
 )
-def watch_next_episode(n_clicks: int) -> tuple[None | str, None | str]:
-    if n_clicks == 0:
+def watch_next_episode(
+    n_clicks: int, user: str
+) -> tuple[None | EventListener, None | str]:
+    if not user:
         return None, None
-    return player.get_next_episode()
+    elif n_clicks == 0:
+        return None, None
+    file, display_string = player.get_next_episode()
+    return default_event_listener(file), display_string
 
 
 @app.callback(
-    Output(component_id="Player", component_property="src", allow_duplicate=True),
+    Output(
+        component_id="VideoContainer",
+        component_property="children",
+        allow_duplicate=True,
+    ),
     Input(component_id="FilmPicker", component_property="value"),
+    Input(component_id="users", component_property="value"),
 )
-def play_film(film: str) -> None | str:
-    if film == "Pick a film":
+def play_film(film: str, user: str) -> None | EventListener:
+    if not user:
+        return None
+    elif film == "Pick a film":
         return None
     if film and film != "Pick a film":
         file = player.get_film_path(film)
-        return file
+        return default_event_listener(file)
 
 
 @app.callback(
@@ -198,17 +286,46 @@ def update_episodes(show: str, season: int) -> tuple:
 
 
 @app.callback(
-    Output(component_id="Player", component_property="src", allow_duplicate=True),
+    Output(
+        component_id="VideoContainer",
+        component_property="children",
+        allow_duplicate=True,
+    ),
+    Output(
+        component_id="ContinueWatchingText",
+        component_property="children",
+        allow_duplicate=True,
+    ),
     Input(component_id="ShowPicker", component_property="value"),
     Input(component_id="SeasonPicker", component_property="value"),
     Input(component_id="EpisodePicker", component_property="value"),
+    Input(component_id="users", component_property="value", allow_optional=False),
 )
-def play_episode(show: str, season: int, episode: int) -> None | str:
-    if not show or show == "Pick a show" or not season or not episode:
-        return
+def play_episode(
+    show: str, season: int, episode: int, user: str
+) -> tuple[None | EventListener, None | str]:
+    if not user:
+        return None, None
+    elif not show or show == "Pick a show" or not season or not episode:
+        return None, None
     file = player.get_show_path(show, season, episode)
-    return file
+    display_string = player.get_last_played()
+    return default_event_listener(file), display_string
+
+
+@app.callback(
+    Output(component_id="RedundantOutputStore", component_property="data"),
+    Input(component_id="VideoEvents", component_property="n_events"),
+    State(component_id="VideoEvents", component_property="event"),
+    suppress_callback_exceptions=True,
+    prevent_initial_callback=True,
+)
+def write_pasued_time(_, data: dict[str, float]) -> None:
+    if data and "target.currentTime" in data.keys():
+        seconds = data["target.currentTime"]
+        player.record_paused_file(seconds)
 
 
 if __name__ == "__main__":
+    logger.info(f"Starting app at {datetime.now()}")
     app.run(host="0.0.0.0", port=8042, debug=False, use_reloader=False)
