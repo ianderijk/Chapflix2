@@ -1,4 +1,5 @@
-from dash import dcc, html
+from dash import dcc, html, State
+from dash_extensions import EventListener
 from dash.dependencies import Input, Output
 from flask import Flask
 import dash
@@ -9,6 +10,7 @@ from pathlib import Path
 from src.player import Player
 
 player = Player()
+events = [{"event": "pause", "props": ["currentTime"]}]
 logger = logging.getLogger(os.path.join(Path(__name__).parent, "app.log"))
 logger.setLevel(logging.INFO)
 
@@ -106,19 +108,20 @@ app.layout = html.Div(  # outer most div, whole page
         ),
         html.Div(  # div container for the video player
             children=[
-                html.Div(  # div containing the video player
+                html.Script(src="/assets/custom.js"),
+                html.Div(
+                    id="VideoContainer",
                     children=[
-                        dcc.Input(
-                            id="VideoProgressInput",
-                            type="text",
-                            style={"display": "none"},
+                        EventListener(
+                            id="VideoEvents",
+                            events=events,
+                            children=[
+                                html.Video(controls=True, id="Player", src=None),
+                            ]
                         ),
-                        dcc.Store(id="VideoProgressStore", storage_type="session"),
                         dcc.Store(id="RedundantOutputStore", storage_type="session"),
                         # this is only needed because an output element is required for the write_paused_time callback and
                         # i'd rather add a random element than get any deeper into js than i already am.
-                        html.Video(controls=True, id="Player", src=None),
-                        html.Script(src="/assets/custom.js"),
                     ],
                     style={
                         "width": "100%",
@@ -273,28 +276,18 @@ def play_episode(
     return file, display_string
 
 
-app.clientside_callback(
-    """
-    function(value) {
-        return value;
-    }
-    """,
-    Output(component_id="VideoProgressStore", component_property="data"),
-    Input(component_id="VideoProgressInput", component_property="value"),
-)
-
-
 @app.callback(
-    Output(
-        component_id="RedundantOutputStore",
-        component_property="data",
-        allow_duplicate=True,
-    ),
-    Input(component_id="VideoProgressStore", component_property="data"),
+    Output(component_id="RedundantOutputStore", component_property="children"),
+    Input(component_id="VideoEvents", component_property="n_events"),
+    State(component_id="VideoEvents", component_property="event"),
+    prevent_initial_callback=True
 )
-def write_pasued_time(pause_time: str) -> None:
-    print(pause_time)
+def write_pasued_time(_, event: dict) -> float | None:
+    print(event)
     print("da fuck?")
+    if event:
+        seconds = event["props"]["currentTime"]
+        print(seconds)
 
 
 if __name__ == "__main__":

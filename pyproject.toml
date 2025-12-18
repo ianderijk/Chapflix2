@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "dash>=3.2.0",
+    "dash-extensions>=1.0.20",
     "psycopg2-binary>=2.9.10",
     "python-dotenv>=1.1.1",
     "sqlalchemy>=2.0.42",
