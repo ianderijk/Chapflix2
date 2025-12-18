@@ -9,6 +9,7 @@ from datetime import datetime
 from pathlib import Path
 from src.player import Player
 
+
 player = Player()
 logger = logging.getLogger(os.path.join(Path(__name__).parent, "app.log"))
 logger.setLevel(logging.INFO)
@@ -19,12 +20,21 @@ def default_event_listener(file: str | None) -> EventListener | None:
         return
     return EventListener(
         id="VideoEvents",
-        events=[{"event": "pause", "props": ["target.currentTime"]}],
+        events=[
+            {"event": "pause", "props": ["target.currentTime"]},
+            {"event": "loadedmetadata"},
+        ],
         logging=True,
         children=[
-            html.Video(controls=True, id="Player", src=file),
-        ]
+            html.Video(
+                controls=True,
+                id="Player",
+                src=file,
+                autoPlay=True,
+            ),
+        ],
     )
+
 
 server = Flask(__name__)
 app = dash.Dash(server=server, prevent_initial_callbacks=True)
@@ -121,12 +131,11 @@ app.layout = html.Div(  # outer most div, whole page
         html.Div(  # div container for the video player
             children=[
                 html.Script(src="/assets/custom.js"),
-                # dcc.Interval(id="PausePoller", interval=600, n_intervals=0),
+                EventListener(id="VideoEvents"),
                 dcc.Store(id="RedundantOutputStore", storage_type="session"),
-                dcc.Store(id="VideoTimeStore", storage_type="session"),
                 html.Div(
                     id="VideoContainer",
-                )
+                ),
             ],
             style={
                 "width": "100%",
@@ -155,26 +164,38 @@ def set_user(user: str) -> str:
 
 
 @app.callback(
-    Output(component_id="VideoContainer", component_property="children", allow_duplicate=True),
+    Output(
+        component_id="VideoContainer",
+        component_property="children",
+        allow_duplicate=True,
+    ),
     Output(
         component_id="ContinueWatchingText",
         component_property="children",
         allow_duplicate=True,
     ),
     Input(component_id="ContinueWatching", component_property="n_clicks"),
-    Input(component_id="users", component_property="value", allow_optional=False),
+    State(component_id="users", component_property="value"),
 )
-def continue_watching(n_clicks: int, user: str) -> tuple[None | EventListener, str | None]:
+def continue_watching(
+    n_clicks: int, user: str
+) -> tuple[None | EventListener, str | None]:
     if not user:
         return None, None
     elif n_clicks == 0:
         return None, None
     file, display_string = player.get_continue_watching()
+    seconds = player.get_continue_watching_from()
+    file = f"{file}#t={seconds}"
     return default_event_listener(file), display_string
 
 
 @app.callback(
-    Output(component_id="VideoContainer", component_property="children", allow_duplicate=True),
+    Output(
+        component_id="VideoContainer",
+        component_property="children",
+        allow_duplicate=True,
+    ),
     Output(
         component_id="ContinueWatchingText",
         component_property="children",
@@ -183,7 +204,9 @@ def continue_watching(n_clicks: int, user: str) -> tuple[None | EventListener, s
     Input(component_id="PreviousEpisode", component_property="n_clicks"),
     Input(component_id="users", component_property="value", allow_optional=False),
 )
-def watch_previous_episode(n_clicks: int, user: str) -> tuple[None | EventListener, None | str]:
+def watch_previous_episode(
+    n_clicks: int, user: str
+) -> tuple[None | EventListener, None | str]:
     if not user:
         return None, None
     elif n_clicks == 0:
@@ -193,7 +216,11 @@ def watch_previous_episode(n_clicks: int, user: str) -> tuple[None | EventListen
 
 
 @app.callback(
-    Output(component_id="VideoContainer", component_property="children", allow_duplicate=True),
+    Output(
+        component_id="VideoContainer",
+        component_property="children",
+        allow_duplicate=True,
+    ),
     Output(
         component_id="ContinueWatchingText",
         component_property="children",
@@ -202,7 +229,9 @@ def watch_previous_episode(n_clicks: int, user: str) -> tuple[None | EventListen
     Input(component_id="NextEpisode", component_property="n_clicks"),
     Input(component_id="users", component_property="value", allow_optional=False),
 )
-def watch_next_episode(n_clicks: int, user: str) -> tuple[None | EventListener, None | str]:
+def watch_next_episode(
+    n_clicks: int, user: str
+) -> tuple[None | EventListener, None | str]:
     if not user:
         return None, None
     elif n_clicks == 0:
@@ -212,7 +241,11 @@ def watch_next_episode(n_clicks: int, user: str) -> tuple[None | EventListener, 
 
 
 @app.callback(
-    Output(component_id="VideoContainer", component_property="children", allow_duplicate=True),
+    Output(
+        component_id="VideoContainer",
+        component_property="children",
+        allow_duplicate=True,
+    ),
     Input(component_id="FilmPicker", component_property="value"),
     Input(component_id="users", component_property="value"),
 )
@@ -253,7 +286,11 @@ def update_episodes(show: str, season: int) -> tuple:
 
 
 @app.callback(
-    Output(component_id="VideoContainer", component_property="children", allow_duplicate=True),
+    Output(
+        component_id="VideoContainer",
+        component_property="children",
+        allow_duplicate=True,
+    ),
     Output(
         component_id="ContinueWatchingText",
         component_property="children",
@@ -278,15 +315,15 @@ def play_episode(
 
 @app.callback(
     Output(component_id="RedundantOutputStore", component_property="data"),
-    # Input(component_id="VideoTimeStore", component_property="data"),
     Input(component_id="VideoEvents", component_property="n_events"),
     State(component_id="VideoEvents", component_property="event"),
     suppress_callback_exceptions=True,
-    prevent_initial_callback=True
+    prevent_initial_callback=True,
 )
 def write_pasued_time(_, data: dict[str, float]) -> None:
-    seconds = data["target.currentTime"]
-    player.record_paused_file(seconds)
+    if data and "target.currentTime" in data.keys():
+        seconds = data["target.currentTime"]
+        player.record_paused_file(seconds)
 
 
 if __name__ == "__main__":

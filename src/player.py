@@ -187,6 +187,12 @@ class Player:
             return "Show has not been watched, start from the beginning!"
         return f"{selection_data[0][0]}, Season {selection_data[0][1]} Episode {selection_data[0][2]}"
 
+    def get_continue_watching_from(self) -> float:
+        seconds_data = execute_query(
+            f"select video_progress from paused_content where user_id = {self.user_id} order by play_num desc, video_progress desc limit 1"
+        )
+        return seconds_data[0][0]
+
     def get_continue_watching(self) -> tuple[str | None, str | None]:
         last_played_data = execute_query(
             f"select * from get_last_played({self.user_id})"
