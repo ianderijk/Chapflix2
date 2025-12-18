@@ -1,4 +1,4 @@
-from ..src import dbconn
+from src import dbconn
 from pathlib import Path
 
 

@@ -72,14 +72,13 @@ Note:
 """
 
 from __future__ import annotations
-from sqlalchemy.sql.operators import sub
 from pathlib import Path
 import os
-from sqlalchemy import Engine, text, create_engine
+from sqlalchemy import Engine, text, create_engine, Row
 from dotenv import load_dotenv
 from datetime import datetime
 import subprocess
-
+from typing import Any, Sequence
 
 load_dotenv()
 
@@ -96,7 +95,7 @@ def execute_statement(statement: str, engine: Engine = db) -> None:
         conn.commit()
 
 
-def execute_query(query: str, engine: Engine = db):
+def execute_query(query: str, engine: Engine = db) -> Sequence[Row[Any]]:
     """Funciton to allow execution of queries that return results"""
     with engine.connect() as conn:
         data = conn.execute(text(query))
