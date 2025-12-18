@@ -114,6 +114,12 @@ class Player:
             self.last_played_file = self.format_filepath(last_played_data[0][6])
         return self.last_played_name
 
+    def set_latest_play_num(self) -> None:
+        play_num_data = execute_query(
+            f"select play_num from history where user_id = {self.user_id} order by time desc limit 1"
+        )
+        self.current_play_num = play_num_data[0][0]
+
     def record_played_file(self, file: Path) -> None:
         playtime = datetime.now()
         file_data = execute_query(f"select file_key from content where file = '{file}'")
@@ -122,6 +128,12 @@ class Player:
             f"""
             INSERT INTO history (file_key, time, user_id) VALUES ({file_key}, '{playtime}', {self.user_id})
             """
+        )
+        self.set_latest_play_num()
+
+    def record_paused_file(self, seconds: float) -> None:
+        execute_statement(
+            f"insert into paused_content (play_num, user_id, video_progress) values ({self.current_play_num}, {self.user_id}, {seconds})"
         )
 
     def get_show_path(self, show: str, season: int, episode: int) -> str:

@@ -10,7 +10,6 @@ from pathlib import Path
 from src.player import Player
 
 player = Player()
-events = [{"event": "pause", "props": ["currentTime"]}]
 logger = logging.getLogger(os.path.join(Path(__name__).parent, "app.log"))
 logger.setLevel(logging.INFO)
 
@@ -20,7 +19,8 @@ def default_event_listener(file: str | None) -> EventListener | None:
         return
     return EventListener(
         id="VideoEvents",
-        events=events,
+        events=[{"event": "pause", "props": ["target.currentTime"]}],
+        logging=True,
         children=[
             html.Video(controls=True, id="Player", src=file),
         ]
@@ -121,7 +121,9 @@ app.layout = html.Div(  # outer most div, whole page
         html.Div(  # div container for the video player
             children=[
                 html.Script(src="/assets/custom.js"),
+                # dcc.Interval(id="PausePoller", interval=600, n_intervals=0),
                 dcc.Store(id="RedundantOutputStore", storage_type="session"),
+                dcc.Store(id="VideoTimeStore", storage_type="session"),
                 html.Div(
                     id="VideoContainer",
                 )
@@ -164,7 +166,7 @@ def set_user(user: str) -> str:
 )
 def continue_watching(n_clicks: int, user: str) -> tuple[None | EventListener, str | None]:
     if not user:
-        return None , None
+        return None, None
     elif n_clicks == 0:
         return None, None
     file, display_string = player.get_continue_watching()
@@ -210,7 +212,7 @@ def watch_next_episode(n_clicks: int, user: str) -> tuple[None | EventListener, 
 
 
 @app.callback(
-    Output(component_id="Player", component_property="src", allow_duplicate=True),
+    Output(component_id="VideoContainer", component_property="children", allow_duplicate=True),
     Input(component_id="FilmPicker", component_property="value"),
     Input(component_id="users", component_property="value"),
 )
@@ -275,17 +277,16 @@ def play_episode(
 
 
 @app.callback(
-    Output(component_id="RedundantOutputStore", component_property="children"),
+    Output(component_id="RedundantOutputStore", component_property="data"),
+    # Input(component_id="VideoTimeStore", component_property="data"),
     Input(component_id="VideoEvents", component_property="n_events"),
     State(component_id="VideoEvents", component_property="event"),
+    suppress_callback_exceptions=True,
     prevent_initial_callback=True
 )
-def write_pasued_time(_, event: dict) -> float | None:
-    print(event)
-    print("da fuck?")
-    if event:
-        seconds = event["props"]["currentTime"]
-        print(seconds)
+def write_pasued_time(_, data: dict[str, float]) -> None:
+    seconds = data["target.currentTime"]
+    player.record_paused_file(seconds)
 
 
 if __name__ == "__main__":

@@ -38,7 +38,7 @@ begin
 	create table if not exists paused_content (
 		play_num integer,
 		user_id integer,
-		video_progress interval
+		video_progress decimal
 	);
 end;
 $$;
