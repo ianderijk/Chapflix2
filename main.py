@@ -14,6 +14,18 @@ events = [{"event": "pause", "props": ["currentTime"]}]
 logger = logging.getLogger(os.path.join(Path(__name__).parent, "app.log"))
 logger.setLevel(logging.INFO)
 
+
+def default_event_listener(file: str | None) -> EventListener | None:
+    if not file:
+        return
+    return EventListener(
+        id="VideoEvents",
+        events=events,
+        children=[
+            html.Video(controls=True, id="Player", src=file),
+        ]
+    )
+
 server = Flask(__name__)
 app = dash.Dash(server=server, prevent_initial_callbacks=True)
 app.layout = html.Div(  # outer most div, whole page
@@ -109,26 +121,9 @@ app.layout = html.Div(  # outer most div, whole page
         html.Div(  # div container for the video player
             children=[
                 html.Script(src="/assets/custom.js"),
+                dcc.Store(id="RedundantOutputStore", storage_type="session"),
                 html.Div(
                     id="VideoContainer",
-                    children=[
-                        EventListener(
-                            id="VideoEvents",
-                            events=events,
-                            children=[
-                                html.Video(controls=True, id="Player", src=None),
-                            ]
-                        ),
-                        dcc.Store(id="RedundantOutputStore", storage_type="session"),
-                        # this is only needed because an output element is required for the write_paused_time callback and
-                        # i'd rather add a random element than get any deeper into js than i already am.
-                    ],
-                    style={
-                        "width": "100%",
-                        "display": "inline-block",
-                        "vertical-align": "bottom",
-                        "align": "center",
-                    },
                 )
             ],
             style={
@@ -158,7 +153,7 @@ def set_user(user: str) -> str:
 
 
 @app.callback(
-    Output(component_id="Player", component_property="src", allow_duplicate=True),
+    Output(component_id="VideoContainer", component_property="children", allow_duplicate=True),
     Output(
         component_id="ContinueWatchingText",
         component_property="children",
@@ -167,16 +162,17 @@ def set_user(user: str) -> str:
     Input(component_id="ContinueWatching", component_property="n_clicks"),
     Input(component_id="users", component_property="value", allow_optional=False),
 )
-def continue_watching(n_clicks: int, user: str) -> tuple[None | str, None | str]:
+def continue_watching(n_clicks: int, user: str) -> tuple[None | EventListener, str | None]:
     if not user:
-        return None, None
+        return None , None
     elif n_clicks == 0:
         return None, None
-    return player.get_continue_watching()
+    file, display_string = player.get_continue_watching()
+    return default_event_listener(file), display_string
 
 
 @app.callback(
-    Output(component_id="Player", component_property="src", allow_duplicate=True),
+    Output(component_id="VideoContainer", component_property="children", allow_duplicate=True),
     Output(
         component_id="ContinueWatchingText",
         component_property="children",
@@ -185,16 +181,17 @@ def continue_watching(n_clicks: int, user: str) -> tuple[None | str, None | str]
     Input(component_id="PreviousEpisode", component_property="n_clicks"),
     Input(component_id="users", component_property="value", allow_optional=False),
 )
-def watch_previous_episode(n_clicks: int, user: str) -> tuple[None | str, None | str]:
+def watch_previous_episode(n_clicks: int, user: str) -> tuple[None | EventListener, None | str]:
     if not user:
         return None, None
     elif n_clicks == 0:
         return None, None
-    return player.get_previous_episode()
+    file, display_string = player.get_previous_episode()
+    return default_event_listener(file), display_string
 
 
 @app.callback(
-    Output(component_id="Player", component_property="src", allow_duplicate=True),
+    Output(component_id="VideoContainer", component_property="children", allow_duplicate=True),
     Output(
         component_id="ContinueWatchingText",
         component_property="children",
@@ -203,12 +200,13 @@ def watch_previous_episode(n_clicks: int, user: str) -> tuple[None | str, None |
     Input(component_id="NextEpisode", component_property="n_clicks"),
     Input(component_id="users", component_property="value", allow_optional=False),
 )
-def watch_next_episode(n_clicks: int, user: str) -> tuple[None | str, None | str]:
+def watch_next_episode(n_clicks: int, user: str) -> tuple[None | EventListener, None | str]:
     if not user:
         return None, None
     elif n_clicks == 0:
         return None, None
-    return player.get_next_episode()
+    file, display_string = player.get_next_episode()
+    return default_event_listener(file), display_string
 
 
 @app.callback(
@@ -216,14 +214,14 @@ def watch_next_episode(n_clicks: int, user: str) -> tuple[None | str, None | str
     Input(component_id="FilmPicker", component_property="value"),
     Input(component_id="users", component_property="value"),
 )
-def play_film(film: str, user: str) -> None | str:
+def play_film(film: str, user: str) -> None | EventListener:
     if not user:
         return None
     elif film == "Pick a film":
         return None
     if film and film != "Pick a film":
         file = player.get_film_path(film)
-        return file
+        return default_event_listener(file)
 
 
 @app.callback(
@@ -253,7 +251,7 @@ def update_episodes(show: str, season: int) -> tuple:
 
 
 @app.callback(
-    Output(component_id="Player", component_property="src", allow_duplicate=True),
+    Output(component_id="VideoContainer", component_property="children", allow_duplicate=True),
     Output(
         component_id="ContinueWatchingText",
         component_property="children",
@@ -266,14 +264,14 @@ def update_episodes(show: str, season: int) -> tuple:
 )
 def play_episode(
     show: str, season: int, episode: int, user: str
-) -> tuple[None | str, None | str]:
+) -> tuple[None | EventListener, None | str]:
     if not user:
         return None, None
     elif not show or show == "Pick a show" or not season or not episode:
         return None, None
     file = player.get_show_path(show, season, episode)
     display_string = player.get_last_played()
-    return file, display_string
+    return default_event_listener(file), display_string
 
 
 @app.callback(
