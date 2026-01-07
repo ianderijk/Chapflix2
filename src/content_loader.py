@@ -14,12 +14,12 @@ TARGET_ADDRESS = "ianderijk@192.168.0.29"
 
 class Migration:
     def __init__(self) -> None:
-        self.source_folders = os.listdir(SOURCE_ROOT)
-        self.source_assets = self.get_source_assets()
-        self.target_folders = self.get_target_folders()
-        self.target_assets = self.get_target_assets()
+        self.source_folders: list[str] = os.listdir(SOURCE_ROOT)
+        self.source_assets: list[str] = self.get_source_assets()
+        self.target_folders: list[str] = self.get_target_folders()
+        self.target_assets: list[str] = self.get_target_assets()
 
-    def get_source_assets(self) -> list:
+    def get_source_assets(self) -> list[str]:
         files = []
         for x in self.source_folders:
             if x == "images":
@@ -29,7 +29,7 @@ class Migration:
             ]
         return files
 
-    def clean_target_data(self, stdout: str, files: bool) -> list:
+    def clean_target_data(self, stdout: str, files: bool) -> list[str]:
         assets_text = stdout.replace("total 100", "")
         if files:
             assets_data = assets_text.split("-rw-rw-r--")
@@ -40,7 +40,7 @@ class Migration:
         tail_names = [x.split(" ")[-1].replace("\n", "") for x in assets_data][1:]
         return [x for x in tail_names if x != "images"]
 
-    def list_dir_ssh(self, folder: str = "") -> list:
+    def list_dir_ssh(self, folder: str = "") -> list[str]:
         return [
             "ssh",
             "-i",
@@ -49,14 +49,14 @@ class Migration:
             f"ls -l {TARGET_ROOT}/{folder}",
         ]
 
-    def get_target_folders(self) -> list:
+    def get_target_folders(self) -> list[str]:
         target_data = subprocess.run(
             self.list_dir_ssh(), capture_output=True, text=True
         )
         target_folder_names = self.clean_target_data(target_data.stdout, False)
         return target_folder_names
 
-    def get_target_assets(self) -> list:
+    def get_target_assets(self) -> list[str]:
         files = []
         for x in self.target_folders:
             file_data = subprocess.run(
@@ -68,7 +68,7 @@ class Migration:
             files += [f"{x}/{y}" for y in file_names]
         return files
 
-    def find_folders_to_create(self) -> list:
+    def find_folders_to_create(self) -> list[str]:
         return [x for x in self.source_folders if x not in self.target_folders]
 
     def create_missing_folders(self) -> None:
