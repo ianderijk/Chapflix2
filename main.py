@@ -23,6 +23,7 @@ def default_event_listener(file: str | None) -> EventListener | None:
         events=[
             {"event": "pause", "props": ["target.currentTime"]},
             {"event": "loadedmetadata"},
+            {"event": "ended", "props": ["type"]},
         ],
         logging=True,
         children=[
@@ -146,6 +147,29 @@ app.layout = html.Div(  # outer most div, whole page
         ),
     ]
 )
+
+
+@app.callback(
+    Output(
+        component_id="VideoContainer",
+        component_property="children",
+        allow_duplicate=True,
+    ),
+    Output(
+        component_id="ContinueWatchingText",
+        component_property="children",
+        allow_duplicate=True,
+    ),
+    Input(component_id="VideoEvents", component_property="event"),
+    prevent_intial_call=True,
+)
+def autoplay_next_episode(
+    event: EventListener,
+) -> tuple[EventListener | dash.NoUpdate | None, str | dash.NoUpdate | None]:
+    if event and event["type"] == "ended":
+        file, display_string = player.get_next_episode()
+        return default_event_listener(file), display_string
+    return dash.no_update, dash.no_update
 
 
 @app.callback(
