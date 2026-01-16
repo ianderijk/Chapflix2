@@ -4,7 +4,7 @@ import sys
 
 def main() -> None:
     try:
-        subprocess.run(["uv", "run", "ruff", "format", "--check"], check=True)
+        subprocess.run(["uvx", "run", "ruff", "format", "--check"], check=True)
     except subprocess.CalledProcessError:
         print("Formatting issues detected. Please format before merging")
         sys.exit(1)
