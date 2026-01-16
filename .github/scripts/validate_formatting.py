@@ -1,4 +1,3 @@
-from sqlalchemy.sql.operators import sub
 import subprocess
 import sys
 
