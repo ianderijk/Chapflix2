@@ -119,7 +119,7 @@ def insert_dummy_history_records() -> None:
     )
 
 
-def gather_content() -> list:
+def gather_content() -> list[str]:
     """Function to gather the data required for the content table on an
     initial load"""
     folders = os.listdir(MEDIA_FILES)
@@ -201,7 +201,7 @@ def gather_films_data() -> dict[str, list[str]]:
     return results
 
 
-def incremental_gather_shows_data() -> dict:
+def incremental_gather_shows_data() -> dict[str, list[str]]:
     folders = os.listdir(MEDIA_FILES)
     missing_content_data = execute_query("select * from incremental_load_content()")
     missing_content = [x[0] for x in missing_content_data]
@@ -222,7 +222,7 @@ def incremental_gather_shows_data() -> dict:
     return results
 
 
-def incremental_gather_films_data() -> dict:
+def incremental_gather_films_data() -> dict[str, list[str]]:
     folders = os.listdir(MEDIA_FILES)
     missing_content_data = execute_query("select * from incremental_load_content()")
     missing_content = [x[0] for x in missing_content_data]
@@ -243,7 +243,7 @@ def incremental_gather_films_data() -> dict:
     return results
 
 
-def episode_data(episode_file: Path) -> tuple:
+def episode_data(episode_file: Path) -> tuple[int, int]:
     file = episode_file.stem
     season = int(file[file.index("S") + 1 : file.index("E")])
     episode = int(file[file.index("E") + 1 :])
@@ -261,7 +261,7 @@ def write_films_shows_data(incremental: bool) -> None:
         for file in episodes:
             season, episode = episode_data(Path(file))
             file_data = execute_query(f"select * from content where file = '{file}'")
-            file_key = file_data[0][0]
+            file_key: int = file_data[0][0]
             execute_statement(
                 f"""INSERT INTO shows (file_key, show, season, episode) VALUES (
                 {file_key}, '{show}', {season}, {episode}
@@ -269,7 +269,7 @@ def write_films_shows_data(incremental: bool) -> None:
             )
     for film, file in films.items():
         file_data = execute_query(f"select * from content where file = '{file[0]}'")
-        file_key = file_data[0][0]
+        file_key: int = file_data[0][0]
         execute_statement(
             f"""INSERT INTO films (file_key, film) VALUES (
             {file_key}, '{film}'
