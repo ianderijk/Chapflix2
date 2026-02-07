@@ -24,3 +24,5 @@ wheels/
 
 # Media files
 /content
+
+/**/*.md
