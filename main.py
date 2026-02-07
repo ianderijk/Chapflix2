@@ -164,7 +164,7 @@ def autoplay_next_episode(
 ) -> tuple[EventListener | dash.NoUpdate | None, str | dash.NoUpdate | None]:
     if event and event["type"] == "ended":
         file, display_string = player.get_next_episode()
-        log_file_played(player)
+        log_file_played(player, "auto_play_next_episode")
         return default_event_listener(file), display_string
     return dash.no_update, dash.no_update
 
@@ -209,7 +209,7 @@ def continue_watching(
     file, display_string = player.get_continue_watching()
     seconds = player.get_continue_watching_from()
     file = f"{file}#t={seconds}"
-    log_file_played(player)
+    log_file_played(player, "continue_watching")
     return default_event_listener(file), display_string
 
 
@@ -235,7 +235,7 @@ def watch_previous_episode(
     elif n_clicks == 0:
         return None, None
     file, display_string = player.get_previous_episode()
-    log_file_played(player)
+    log_file_played(player, "watch_previous_episode")
     return default_event_listener(file), display_string
 
 
@@ -261,7 +261,7 @@ def watch_next_episode(
     elif n_clicks == 0:
         return None, None
     file, display_string = player.get_next_episode()
-    log_file_played(player)
+    log_file_played(player, "watch_next_episode")
     return default_event_listener(file), display_string
 
 
@@ -281,7 +281,7 @@ def play_film(film: str, user: str) -> None | EventListener:
         return None
     if film and film != "Pick a film":
         file = player.get_film_path(film)
-        log_file_played(player)
+        log_file_played(player, "play_film")
         return default_event_listener(file)
 
 
@@ -336,7 +336,7 @@ def play_episode(
         return None, None
     file = player.get_show_path(show, season, episode)
     display_string = player.get_last_played()
-    log_file_played(player)
+    log_file_played(player, "play_episode")
     return default_event_listener(file), display_string
 
 

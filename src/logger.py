@@ -14,8 +14,8 @@ def log_user_selection(player: Player) -> None:
     logger.info(f"User {player.user_display_name} selected")
 
 
-def log_file_played(player: Player) -> None:
-    logger.info(f"{player.current_selection} selected")
+def log_file_played(player: Player, function_name: str) -> None:
+    logger.info(f"{player.current_selection} selected using {function_name}")
 
 
 def log_file_paused(player: Player) -> None:
