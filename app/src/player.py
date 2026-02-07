@@ -72,7 +72,7 @@ Usage:
 from __future__ import annotations
 from pathlib import Path
 from datetime import datetime
-from src.dbconn import execute_query, execute_statement
+from app.src.dbconn import execute_query, execute_statement
 
 
 class Player:

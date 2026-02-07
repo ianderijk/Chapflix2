@@ -5,8 +5,8 @@ from flask import Flask
 import dash
 import os
 from pathlib import Path
-from src.player import Player
-from src.logger import (
+from app.src.player import Player
+from app.src.logger import (
     log_app_starting,
     log_user_selection,
     log_file_played,
