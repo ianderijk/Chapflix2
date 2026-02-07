@@ -278,7 +278,7 @@ def write_films_shows_data(incremental: bool) -> None:
 
 
 def build_functions() -> None:
-    shell_path = os.path.join(Path(__file__).parent.parent.parent, "postgres", "reset_functions.sh")
+    shell_path = os.path.join(Path(__file__).parent.parent.parent, "infra", "postgres", "reset_functions.sh")
     subprocess.run(["bash", shell_path])
 
 
