@@ -84,7 +84,7 @@ class Player:
 
     def format_filepath(self, path: Path) -> str:
         path_list = str(path).split("/")
-        return "/".join(path_list[path_list.index("assets") :])
+        return "/".join(path_list[path_list.index("chapflix2") :])
 
     def set_user(self, display_name: str) -> None:
         user_id_data = execute_query(
