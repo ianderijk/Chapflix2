@@ -3,16 +3,17 @@ from dash_extensions import EventListener
 from dash.dependencies import Input, Output
 from flask import Flask
 import dash
-import logging
 import os
-from datetime import datetime
 from pathlib import Path
 from src.player import Player
-
+from src.logger import (
+    log_app_starting,
+    log_user_selection,
+    log_file_played,
+    log_file_paused,
+)
 
 player = Player()
-logger = logging.getLogger(os.path.join(Path(__name__).parent, "app.log"))
-logger.setLevel(logging.INFO)
 
 
 def default_event_listener(file: str | None) -> EventListener | None:
@@ -38,7 +39,10 @@ def default_event_listener(file: str | None) -> EventListener | None:
 
 
 server = Flask(__name__)
-app = dash.Dash(server=server, prevent_initial_callbacks=True)
+app = dash.Dash(
+    server=server,
+    prevent_initial_callbacks=True,
+)
 app.layout = html.Div(  # outer most div, whole page
     children=[
         html.Div(  # big div at the top used for menus
@@ -168,6 +172,7 @@ def autoplay_next_episode(
 ) -> tuple[EventListener | dash.NoUpdate | None, str | dash.NoUpdate | None]:
     if event and event["type"] == "ended":
         file, display_string = player.get_next_episode()
+        log_file_played(player, "auto_play_next_episode")
         return default_event_listener(file), display_string
     return dash.no_update, dash.no_update
 
@@ -183,6 +188,7 @@ def autoplay_next_episode(
 def set_user(user: str) -> str:
     if user:
         player.set_user(user)
+        log_user_selection(player)
         return player.get_last_played()
     return ""
 
@@ -211,6 +217,7 @@ def continue_watching(
     file, display_string = player.get_continue_watching()
     seconds = player.get_continue_watching_from()
     file = f"{file}#t={seconds}"
+    log_file_played(player, "continue_watching")
     return default_event_listener(file), display_string
 
 
@@ -236,6 +243,7 @@ def watch_previous_episode(
     elif n_clicks == 0:
         return None, None
     file, display_string = player.get_previous_episode()
+    log_file_played(player, "watch_previous_episode")
     return default_event_listener(file), display_string
 
 
@@ -261,6 +269,7 @@ def watch_next_episode(
     elif n_clicks == 0:
         return None, None
     file, display_string = player.get_next_episode()
+    log_file_played(player, "watch_next_episode")
     return default_event_listener(file), display_string
 
 
@@ -280,6 +289,7 @@ def play_film(film: str, user: str) -> None | EventListener:
         return None
     if film and film != "Pick a film":
         file = player.get_film_path(film)
+        log_file_played(player, "play_film")
         return default_event_listener(file)
 
 
@@ -334,6 +344,7 @@ def play_episode(
         return None, None
     file = player.get_show_path(show, season, episode)
     display_string = player.get_last_played()
+    log_file_played(player, "play_episode")
     return default_event_listener(file), display_string
 
 
@@ -348,8 +359,9 @@ def write_pasued_time(_, data: dict[str, float]) -> None:
     if data and "target.currentTime" in data.keys():
         seconds = data["target.currentTime"]
         player.record_paused_file(seconds)
+        log_file_paused(player)
 
 
 if __name__ == "__main__":
-    logger.info(f"Starting app at {datetime.now()}")
+    log_app_starting()
     app.run(host="0.0.0.0", port=8042, debug=False, use_reloader=False)

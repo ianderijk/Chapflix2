@@ -80,6 +80,7 @@ class Player:
         self.set_playable_films()
         self.set_playable_shows()
         self.user_id: None | int = None
+        self.current_selection: None | str = None
 
     def format_filepath(self, path: Path) -> str:
         path_list = str(path).split("/")
@@ -91,6 +92,17 @@ class Player:
         )
         self.user_id = int(user_id_data[0][0])
         self.user_display_name = display_name
+
+    def set_current_selection(self) -> None:
+        data = execute_query(f"select * from get_last_played({self.user_id})")
+        media_type = data[0][0]
+        if media_type == "film":
+            self.current_selection: str = data[0][2]
+            return
+        show: str = data[0][3]
+        season: int = data[0][4]
+        episode: int = data[0][5]
+        self.current_selection = f"{show}, season {season} episode {episode}"
 
     def get_last_played(self) -> str:
         """Sets both the last played file name and key. When last played is a show
@@ -112,6 +124,7 @@ class Player:
                 f"{show.title()} - Season {season} Episode {episode}"
             )
             self.last_played_file = self.format_filepath(last_played_data[0][6])
+        self.set_current_selection()
         return self.last_played_name
 
     def set_latest_play_num(self) -> None:
@@ -142,12 +155,14 @@ class Player:
         )
         filepath = Path(file_data[0][0])
         self.record_played_file(filepath)
+        self.set_current_selection()
         return self.format_filepath(filepath)
 
     def get_film_path(self, film) -> str:
         file_data = execute_query(f"select * from get_film_path('{film}')")
         filepath = Path(file_data[0][0])
         self.record_played_file(filepath)
+        self.set_current_selection()
         return self.format_filepath(filepath)
 
     def drop_down_lists(self, lst: list) -> list:
@@ -206,6 +221,7 @@ class Player:
         episode = last_played_data[0][5]
         display_string = f"Now playing: {show} Season {season} episode {episode}"
         self.record_played_file(episode_path)
+        self.set_current_selection()
         return self.format_filepath(episode_path), display_string
 
     def get_next_episode(self) -> tuple[str | None, str]:
@@ -219,6 +235,7 @@ class Player:
             episode = next_episode_data[0][3]
             display_string = f"Now playing: {show} season {season}, episode {episode}"
             self.record_played_file(next_episode_path)
+            self.set_current_selection()
             return self.format_filepath(next_episode_path), display_string
         return None, "There is nothing left to play! Time to pick another show."
 
@@ -233,6 +250,7 @@ class Player:
             episode = previous_episode_data[0][3]
             display_string = f"Now playing: {show} season {season}, episode {episode}"
             self.record_played_file(previous_episode_path)
+            self.set_current_selection()
             return self.format_filepath(previous_episode_path), display_string
         return None, "There is nothing left to play! Time to pick another show."
 
