@@ -6,7 +6,12 @@ import dash
 import os
 from pathlib import Path
 from src.player import Player
-from src.logger import log_app_starting, log_user_selection, log_file_played, log_file_paused
+from src.logger import (
+    log_app_starting,
+    log_user_selection,
+    log_file_played,
+    log_file_paused,
+)
 
 player = Player()
 
@@ -34,7 +39,10 @@ def default_event_listener(file: str | None) -> EventListener | None:
 
 
 server = Flask(__name__)
-app = dash.Dash(server=server, prevent_initial_callbacks=True, )
+app = dash.Dash(
+    server=server,
+    prevent_initial_callbacks=True,
+)
 app.layout = html.Div(  # outer most div, whole page
     children=[
         html.Div(  # big div at the top used for menus
