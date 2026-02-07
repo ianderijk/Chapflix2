@@ -80,11 +80,12 @@ class Player:
         self.set_playable_films()
         self.set_playable_shows()
         self.user_id: None | int = None
-        self.current_selection: None | str = None
 
     def format_filepath(self, path: Path) -> str:
         path_list = str(path).split("/")
-        return "/".join(path_list[path_list.index("chapflix2") :])
+        trimmed_path = "/".join(path_list[path_list.index("content") :])
+        print(trimmed_path)
+        return trimmed_path
 
     def set_user(self, display_name: str) -> None:
         user_id_data = execute_query(
