@@ -83,7 +83,7 @@ from typing import Any, Sequence
 load_dotenv()
 
 
-MEDIA_FILES = Path(os.path.join(Path(__file__).parent.parent), "assets", "content")
+MEDIA_FILES = (Path(__file__).parent.parent.parent) / "content"
 db = create_engine(str(os.getenv("DATABASE_URL")))
 
 
@@ -278,7 +278,7 @@ def write_films_shows_data(incremental: bool) -> None:
 
 
 def build_functions() -> None:
-    shell_path = os.path.join(Path(__file__).parent.parent, "dbo", "reset_functions.sh")
+    shell_path = os.path.join(Path(__file__).parent.parent.parent, "infra", "postgres", "reset_functions.sh")
     subprocess.run(["bash", shell_path])
 
 

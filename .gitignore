@@ -21,3 +21,8 @@ wheels/
 
 # Log file
 *.log
+
+# Media files
+/content
+
+/**/*.md

@@ -1,12 +1,10 @@
 from dash import dcc, html, State
 from dash_extensions import EventListener
 from dash.dependencies import Input, Output
-from flask import Flask
+from flask import Flask, send_from_directory
 import dash
-import os
-from pathlib import Path
-from src.player import Player
-from src.logger import (
+from app.src.player import Player
+from app.src.logger import (
     log_app_starting,
     log_user_selection,
     log_file_played,
@@ -38,11 +36,14 @@ def default_event_listener(file: str | None) -> EventListener | None:
     )
 
 
-server = Flask(__name__)
-app = dash.Dash(
-    server=server,
-    prevent_initial_callbacks=True,
-)
+app = dash.Dash(__name__, prevent_initial_callbacks=True)
+server = app.server
+
+@server.route("/content/<path:filename>")
+def serve_content(filename: str):
+    return send_from_directory("app/content", filename)
+
+
 app.layout = html.Div(  # outer most div, whole page
     children=[
         html.Div(  # big div at the top used for menus
