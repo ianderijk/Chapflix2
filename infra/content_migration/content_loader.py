@@ -104,7 +104,7 @@ class Migration:
             "-i",
             KEY_PATH,
             TARGET_ADDRESS,
-            "cd /media/ianderijk/Backup/Chapflix2/ && /media/ianderijk/Backup/Chapflix2/.venv/bin/python3 -m src.dbconn",
+            "cd /media/ianderijk/Backup/Chapflix2/ && /media/ianderijk/Backup/Chapflix2/.venv/bin/python3 -m app.src.dbconn",
         ]
         subprocess.run(command)
         restart_system = [
