@@ -85,7 +85,6 @@ class Player:
     def format_filepath(self, path: Path) -> str:
         path_list = str(path).split("/")
         trimmed_path = "/".join(path_list[path_list.index("content") :])
-        print(trimmed_path)
         return trimmed_path
 
     def set_user(self, display_name: str) -> None:
