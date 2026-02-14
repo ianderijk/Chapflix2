@@ -65,6 +65,7 @@ app.layout = html.Div(  # outer most div, whole page
                                                 {"label": "Chap", "value": "Chap"},
                                             ],
                                             placeholder="Pick a user",
+                                            searchable=False,
                                         )
                                     ]
                                 ),
@@ -111,6 +112,7 @@ app.layout = html.Div(  # outer most div, whole page
                             options=player.playable_films,
                             placeholder="Pick a film",
                             value="Pick a film",
+                            searchable=False,
                         ),
                         html.H5("TV Shows"),
                         dcc.Dropdown(
@@ -118,9 +120,10 @@ app.layout = html.Div(  # outer most div, whole page
                             options=player.playable_shows,
                             value="Pick a show",
                             placeholder="Pick a show",
+                            searchable=False,
                         ),
-                        dcc.Dropdown(id="SeasonPicker", options=[], value=None),
-                        dcc.Dropdown(id="EpisodePicker", options=[], value=None),
+                        dcc.Dropdown(id="SeasonPicker", options=[], value=None, searchable=False,),
+                        dcc.Dropdown(id="EpisodePicker", options=[], value=None, searchable=False,),
                     ],
                     style={
                         "width": "100%",
