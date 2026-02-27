@@ -142,7 +142,7 @@ def write_contents_data() -> None:
                           );""")
 
 
-def incremental_gather_content() -> list:
+def incremental_gather_content() -> list[str]:
     """Function to gather data required to add new content to the content table"""
     folders = os.listdir(MEDIA_FILES)
     existing_content_data = execute_query("select file from content")
@@ -278,7 +278,9 @@ def write_films_shows_data(incremental: bool) -> None:
 
 
 def build_functions() -> None:
-    shell_path = os.path.join(Path(__file__).parent.parent.parent, "infra", "postgres", "reset_functions.sh")
+    shell_path = os.path.join(
+        Path(__file__).parent.parent.parent, "infra", "postgres", "reset_functions.sh"
+    )
     subprocess.run(["bash", shell_path])
 
 

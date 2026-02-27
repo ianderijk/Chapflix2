@@ -2,12 +2,8 @@ from __future__ import annotations
 import os
 import subprocess
 
-SOURCE_ROOT = os.path.join(
-    "/media", "idr", "ExtDrive", "Chapflix2", "content"
-)
-TARGET_ROOT = os.path.join(
-    "/media", "ianderijk", "Backup", "Chapflix2", "content"
-)
+SOURCE_ROOT = os.path.join("/media", "idr", "ExtDrive", "Chapflix2", "content")
+TARGET_ROOT = os.path.join("/media", "ianderijk", "Backup", "Chapflix2", "content")
 KEY_PATH = os.path.join("/home", "idr", ".ssh", "id_rsa_target")
 TARGET_ADDRESS = "ianderijk@192.168.0.29"
 

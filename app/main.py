@@ -42,6 +42,7 @@ VIDEO_DIR = Path(__file__).parent.parent / "content"
 app = dash.Dash(__name__, prevent_initial_callbacks=True)
 server = app.server
 
+
 @server.route("/content/<path:filename>")
 def serve_content(filename: str):
     return send_from_directory(VIDEO_DIR, filename)
@@ -122,8 +123,18 @@ app.layout = html.Div(  # outer most div, whole page
                             placeholder="Pick a show",
                             searchable=False,
                         ),
-                        dcc.Dropdown(id="SeasonPicker", options=[], value=None, searchable=False,),
-                        dcc.Dropdown(id="EpisodePicker", options=[], value=None, searchable=False,),
+                        dcc.Dropdown(
+                            id="SeasonPicker",
+                            options=[],
+                            value=None,
+                            searchable=False,
+                        ),
+                        dcc.Dropdown(
+                            id="EpisodePicker",
+                            options=[],
+                            value=None,
+                            searchable=False,
+                        ),
                     ],
                     style={
                         "width": "100%",

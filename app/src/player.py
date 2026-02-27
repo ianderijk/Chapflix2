@@ -83,6 +83,7 @@ class Player:
         self.current_selection: None | str = None
 
     def format_filepath(self, path: Path) -> str:
+        """Path object converted to a string so it can be made relative?"""
         path_list = str(path).split("/")
         trimmed_path = "/".join(path_list[path_list.index("content") :])
         return trimmed_path
@@ -166,24 +167,24 @@ class Player:
         self.set_current_selection()
         return self.format_filepath(filepath)
 
-    def drop_down_lists(self, lst: list) -> list:
+    def drop_down_lists(self, lst: list[str]) -> list[dict[str, str]]:
         return [{"label": x, "value": x} for x in lst]
 
-    def get_film_options(self) -> list:
+    def get_film_options(self) -> list[str]:
         film_data = execute_query("select distinct film from films")
         return sorted([x[0] for x in film_data])
 
-    def get_show_options(self) -> list:
+    def get_show_options(self) -> list[str]:
         show_data = execute_query("select distinct show from shows")
         return sorted([x[0] for x in show_data])
 
-    def get_season_options(self, show: str) -> list:
+    def get_season_options(self, show: str) -> list[int]:
         seasons_data = execute_query(
             f"select distinct season from shows where show = '{show}' order by season"
         )
         return [x[0] for x in seasons_data]
 
-    def get_episode_options(self, show: str, season: int) -> list:
+    def get_episode_options(self, show: str, season: int) -> list[int]:
         episodes_data = execute_query(
             f"select distinct episode from shows where show = '{show}' and season = {season} order by episode"
         )
