@@ -1,4 +1,3 @@
-from sqlalchemy.testing.engines import mock_engine
 from app.src.dbconn import (
     execute_statement,
     execute_query,
@@ -6,13 +5,9 @@ from app.src.dbconn import (
     gather_shows_data,
     gather_films_data,
     episode_data,
-    incremental_gather_content,
-    incremental_gather_films_data,
-    incremental_gather_shows_data,
 )
 from pathlib import Path
 from unittest.mock import MagicMock
-from sqlalchemy.sql import text
 
 
 def test_execute_statement():

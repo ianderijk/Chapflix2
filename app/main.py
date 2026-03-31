@@ -1,9 +1,8 @@
 from dash import dcc, html, State
 from dash_extensions import EventListener
 from dash.dependencies import Input, Output
-from flask import Flask, send_from_directory
+from flask import send_from_directory
 import dash
-import os
 from pathlib import Path
 from app.src.player import Player
 from app.src.logger import (
