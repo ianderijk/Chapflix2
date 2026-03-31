@@ -65,20 +65,18 @@ Functions:
 
     incremental_build() -> None
         Update database with newly discovered content
-
-Note:
-    The module currently uses string formatting for SQL queries, which may be
-    vulnerable to SQL injection. Consider parameterized queries for production use.
 """
 
 from __future__ import annotations
-from pathlib import Path
+
 import os
-from sqlalchemy import Engine, text, create_engine, Row
-from dotenv import load_dotenv
-from datetime import datetime
 import subprocess
+from datetime import datetime
+from pathlib import Path
 from typing import Any, Sequence
+
+from dotenv import load_dotenv
+from sqlalchemy import Engine, Row, create_engine, text
 
 load_dotenv()
 
