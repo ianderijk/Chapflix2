@@ -1,4 +1,3 @@
-from __future__ import annotations
 import os
 import subprocess
 
@@ -67,12 +66,14 @@ class Migration:
     def find_folders_to_create(self) -> list[str]:
         return [x for x in self.source_folders if x not in self.target_folders]
 
+    def missing_folders_command(self, folder: str) -> list[str]:
+        return ["ssh", "-i", KEY_PATH, TARGET_ADDRESS, f"mkdir -p {folder}"]
+
     def create_missing_folders(self) -> None:
         missing_folders = self.find_folders_to_create()
-        command = lambda x: ["ssh", "-i", KEY_PATH, TARGET_ADDRESS, f"mkdir -p {x}"]
         for x in missing_folders:
             path = os.path.join(TARGET_ROOT, x)
-            subprocess.run(command(path))
+            subprocess.run(self.missing_folders_command(path))
 
     def find_files_to_migrate(self) -> list[tuple[str, str]]:
         migration_assets = [
@@ -100,7 +101,11 @@ class Migration:
             "-i",
             KEY_PATH,
             TARGET_ADDRESS,
-            "cd /media/ianderijk/Backup/Chapflix2/ && /media/ianderijk/Backup/Chapflix2/.venv/bin/python3 -m app.src.dbconn",
+            (
+                "cd /media/ianderijk/Backup/Chapflix2/ &&"
+                "/media/ianderijk/Backup/Chapflix2/.venv/bin/python3"
+                "-m app.src.db_load incremental"
+            ),
         ]
         subprocess.run(command)
         restart_system = [

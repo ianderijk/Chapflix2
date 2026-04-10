@@ -255,7 +255,3 @@ class Player:
             self.set_current_selection()
             return self.format_filepath(previous_episode_path), display_string
         return None, "There is nothing left to play! Time to pick another show."
-
-
-if __name__ == "__main__":
-    print("Hello from player")
