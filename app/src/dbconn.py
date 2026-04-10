@@ -294,7 +294,3 @@ def initial_build() -> None:
 def incremental_build() -> None:
     incremental_write_contents_data()
     write_films_shows_data(True)
-
-
-if __name__ == "__main__":
-    initial_build()
