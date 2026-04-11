@@ -13,6 +13,8 @@ class Migration:
         self.source_assets: list[str] = self.get_source_assets()
         self.target_folders: list[str] = self.get_target_folders()
         self.target_assets: list[str] = self.get_target_assets()
+        self.total_memory_migrating: int = 0
+        self.file_memories: dict[str, int] = {}
 
     def get_source_assets(self) -> list[str]:
         files = []
@@ -85,8 +87,17 @@ class Migration:
         ]
         return migration_asset_pairs
 
+    def calculate_migrating_memory(
+        self, migration_pairs: list[tuple[str, str]]
+    ) -> None:
+        for x, _ in migration_pairs:
+            filesize = os.path.getsize(x)
+            self.file_memories[x] = filesize
+        self.total_memory_migrating += sum(x for x in self.file_memories.values())
+
     def migrate_files(self) -> None:
         files_to_migrate = self.find_files_to_migrate()
+        self.calculate_migrating_memory(files_to_migrate)
         for x, y in files_to_migrate:
             command = ["scp", "-i", KEY_PATH, x, f"{TARGET_ADDRESS}:{y}"]
             result = subprocess.run(command, capture_output=True, text=True)
@@ -94,6 +105,9 @@ class Migration:
                 pass
             else:
                 raise Exception(f"Failed to copy {x} to {y}")
+            print(
+                f"Completion: {(self.file_memories[x] / self.total_memory_migrating) * 100:.5f}%"
+            )
 
     def add_files_to_database(self) -> None:
         command = [
