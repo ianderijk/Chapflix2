@@ -26,42 +26,31 @@ class Migration:
             ]
         return files
 
-    def clean_target_data(self, stdout: str, files: bool) -> list[str]:
-        assets_text = stdout.replace("total 100", "")
-        if files:
-            assets_data = assets_text.split("-rw-rw-r--")
-            tail_names = [x.split(" ")[-1].replace("\n", "") for x in assets_data][1:]
-            return [x for x in tail_names if x != "images"]
-
-        assets_data = assets_text.split("drwxr-xr-x")
-        tail_names = [x.split(" ")[-1].replace("\n", "") for x in assets_data][1:]
-        return [x for x in tail_names if x != "images"]
-
-    def list_dir_ssh(self, folder: str = "") -> list[str]:
-        return [
-            "ssh",
-            "-i",
-            KEY_PATH,
-            TARGET_ADDRESS,
-            f"ls -l {TARGET_ROOT}/{folder}",
-        ]
+    def list_dir_ssh(self, folder: str = "", files: bool = False) -> list[str]:
+        command = (
+            f'find "{TARGET_ROOT}/{folder}" -maxdepth 1 -type f -printf "%f\n"'
+            if files
+            else f'find /{TARGET_ROOT} -maxdepth 1 -type d -printf "%f\n"'
+        )
+        return ["ssh", "-i", KEY_PATH, TARGET_ADDRESS, command]
 
     def get_target_folders(self) -> list[str]:
         target_data = subprocess.run(
             self.list_dir_ssh(), capture_output=True, text=True
         )
-        target_folder_names = self.clean_target_data(target_data.stdout, False)
+        folder_names = target_data.stdout
+        target_folder_names = [x for x in folder_names.split("\n") if x != "content"]
         return target_folder_names
 
     def get_target_assets(self) -> list[str]:
         files = []
         for x in self.target_folders:
             file_data = subprocess.run(
-                self.list_dir_ssh(x),
+                self.list_dir_ssh(x, True),
                 capture_output=True,
                 text=True,
             )
-            file_names = self.clean_target_data(file_data.stdout, True)
+            file_names = file_data.stdout.split("\n")
             files += [f"{x}/{y}" for y in file_names]
         return files
 
@@ -95,19 +84,29 @@ class Migration:
             self.file_memories[x] = filesize
         self.total_memory_migrating += sum(x for x in self.file_memories.values())
 
+    def formatted_progress(self, progress: float) -> str:
+        value = (progress / self.total_memory_migrating) * 100
+        value_str = str(value)
+        decimal_places = "".join([x for x in value_str.split(".")[-1]])
+        if all(x == "0" for x in decimal_places):
+            return str(int(value))
+        return f"{value}:.5f"
+
     def migrate_files(self) -> None:
         files_to_migrate = self.find_files_to_migrate()
         self.calculate_migrating_memory(files_to_migrate)
+        progress = 0
         for x, y in files_to_migrate:
+            print(f"Migrating: {x}")
             command = ["scp", "-i", KEY_PATH, x, f"{TARGET_ADDRESS}:{y}"]
             result = subprocess.run(command, capture_output=True, text=True)
             if result.returncode == 0:
                 pass
             else:
                 raise Exception(f"Failed to copy {x} to {y}")
-            print(
-                f"Completion: {(self.file_memories[x] / self.total_memory_migrating) * 100:.5f}%"
-            )
+            progress += self.file_memories[x]
+            progress_value = self.formatted_progress(progress)
+            print(f"Completion: {progress_value}%")
 
     def add_files_to_database(self) -> None:
         command = [
@@ -117,8 +116,8 @@ class Migration:
             TARGET_ADDRESS,
             (
                 "cd /media/ianderijk/Backup/Chapflix2/ &&"
-                "/media/ianderijk/Backup/Chapflix2/.venv/bin/python3"
-                "-m app.src.db_load incremental"
+                "source .venv/bin/activate &&"
+                "python3 -m app.src.db_load incremental"
             ),
         ]
         subprocess.run(command)
