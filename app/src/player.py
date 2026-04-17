@@ -69,7 +69,7 @@ Usage:
     selections effectively.
 """
 
-from __future__ import annotations
+from typing import Optional
 from pathlib import Path
 from datetime import datetime
 from app.src.dbconn import execute_query, execute_statement
@@ -79,8 +79,8 @@ class Player:
     def __init__(self):
         self.set_playable_films()
         self.set_playable_shows()
-        self.user_id: None | int = None
-        self.current_selection: None | str = None
+        self.user_id: Optional[int] = None
+        self.current_selection: Optional[str] = None
 
     def format_filepath(self, path: Path) -> str:
         """Path object converted to a string so it can be made relative?"""
@@ -99,7 +99,7 @@ class Player:
         data = execute_query(f"select * from get_last_played({self.user_id})")
         media_type = data[0][0]
         if media_type == "film":
-            self.current_selection: str = data[0][2]
+            self.current_selection = data[0][2]
             return
         show: str = data[0][3]
         season: int = data[0][4]

@@ -67,14 +67,11 @@ Functions:
         Update database with newly discovered content
 """
 
-from __future__ import annotations
-
 import os
 import subprocess
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Sequence
-
 from dotenv import load_dotenv
 from sqlalchemy import Engine, Row, create_engine, text
 
