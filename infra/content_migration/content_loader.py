@@ -1,5 +1,6 @@
 import os
 import subprocess
+import time
 
 SOURCE_ROOT = os.path.join("/media", "idr", "ExtDrive", "Chapflix2", "content")
 TARGET_ROOT = os.path.join("/media", "ianderijk", "Backup", "Chapflix2", "content")
@@ -15,6 +16,7 @@ class Migration:
         self.target_assets: list[str] = self.get_target_assets()
         self.total_memory_migrating: int = 0
         self.file_memories: dict[str, int] = {}
+        self.time_elapsed: float = 0.0
 
     def get_source_assets(self) -> list[str]:
         files = []
@@ -90,13 +92,30 @@ class Migration:
         decimal_places = "".join([x for x in value_str.split(".")[-1]])
         if all(x == "0" for x in decimal_places):
             return str(int(value))
-        return f"{value}:.5f"
+        return f"{value:.5f}"
+
+    def calculate_remaining_time(
+        self, start: float, end: float, cur_progress: str
+    ) -> float:
+        time_taken = end - start
+        self.time_elapsed += time_taken
+        progress = float(cur_progress)
+        remaining_transfer = 100 - progress
+        time_per_pct = self.time_elapsed / progress
+        remaining_time = remaining_transfer * time_per_pct
+        return remaining_time
+
+    def format_remaining_time(self, seconds: float) -> str:
+        minutes = int(seconds // 60)
+        seconds_ = int(seconds % 60)
+        return f"{minutes}:{seconds_}"
 
     def migrate_files(self) -> None:
         files_to_migrate = self.find_files_to_migrate()
         self.calculate_migrating_memory(files_to_migrate)
         progress = 0
         for x, y in files_to_migrate:
+            loop_start = time.time()
             print(f"Migrating: {x}")
             command = ["scp", "-i", KEY_PATH, x, f"{TARGET_ADDRESS}:{y}"]
             result = subprocess.run(command, capture_output=True, text=True)
@@ -107,6 +126,12 @@ class Migration:
             progress += self.file_memories[x]
             progress_value = self.formatted_progress(progress)
             print(f"Completion: {progress_value}%")
+            loop_end = time.time()
+            remaining_seconds = self.calculate_remaining_time(
+                loop_start, loop_end, progress_value
+            )
+            remaining_time = self.format_remaining_time(remaining_seconds)
+            print(f"ETA: {remaining_time}")
 
     def add_files_to_database(self) -> None:
         command = [
