@@ -114,7 +114,7 @@ def insert_dummy_history_records() -> None:
     )
 
 
-def gather_content() -> list[str]:
+def gather_content() -> list[Path]:
     """Function to gather the data required for the content table on an
     initial load"""
     folders = os.listdir(MEDIA_FILES)
@@ -122,10 +122,7 @@ def gather_content() -> list[str]:
     for x in folders:
         if x == "images":
             continue
-        contents += [
-            os.path.join(MEDIA_FILES, x, y)
-            for y in os.listdir(os.path.join(MEDIA_FILES, x))
-        ]
+        contents += [MEDIA_FILES / x / y for y in os.listdir(MEDIA_FILES / x)]
     return contents
 
 
@@ -137,19 +134,19 @@ def write_contents_data() -> None:
                           );""")
 
 
-def incremental_gather_content() -> list[str]:
+def incremental_gather_content() -> list[Path]:
     """Function to gather data required to add new content to the content table"""
     folders = os.listdir(MEDIA_FILES)
     existing_content_data = execute_query("select file from content")
-    existing_content = [x[0] for x in existing_content_data]
+    existing_content = [Path(x[0]) for x in existing_content_data]
     contents = []
     for x in folders:
         if x == "images":
             continue
         contents += [
-            os.path.join(MEDIA_FILES, x, y)
-            for y in os.listdir(os.path.join(MEDIA_FILES, x))
-            if os.path.join(MEDIA_FILES, x, y) not in existing_content
+            MEDIA_FILES / x / y
+            for y in os.listdir(MEDIA_FILES / x)
+            if MEDIA_FILES / x / y not in existing_content
         ]
     return contents
 
@@ -164,39 +161,33 @@ def incremental_write_contents_data() -> None:
                           );""")
 
 
-def gather_shows_data() -> dict[str, list[str]]:
+def gather_shows_data() -> dict[str, list[Path]]:
     results = {}
     folders = os.listdir(MEDIA_FILES)
     for x in folders:
         if x == "images":
             continue
-        contents = [
-            os.path.join(MEDIA_FILES, x, y)
-            for y in os.listdir(os.path.join(MEDIA_FILES, x))
-        ]
+        contents = [MEDIA_FILES / x / y for y in os.listdir(MEDIA_FILES / x)]
         if len(contents) == 1:  # film folders contain a single file so skip these
             continue
         results[x] = contents
     return results
 
 
-def gather_films_data() -> dict[str, list[str]]:
+def gather_films_data() -> dict[str, list[Path]]:
     results = {}
     folders = os.listdir(MEDIA_FILES)
     for x in folders:
         if x == "images":
             continue
-        contents = [
-            os.path.join(MEDIA_FILES, x, y)
-            for y in os.listdir(os.path.join(MEDIA_FILES, x))
-        ]
+        contents = [MEDIA_FILES / x / y for y in os.listdir(MEDIA_FILES / x)]
         if len(contents) > 1:  # show folders contain multiple files so skip these
             continue
         results[x] = contents
     return results
 
 
-def incremental_gather_shows_data() -> dict[str, list[str]]:
+def incremental_gather_shows_data() -> dict[str, list[Path]]:
     folders = os.listdir(MEDIA_FILES)
     missing_content_data = execute_query("select * from incremental_load_content()")
     missing_content = [x[0] for x in missing_content_data]
@@ -205,19 +196,17 @@ def incremental_gather_shows_data() -> dict[str, list[str]]:
         if x == "images":
             continue
         contents = [
-            os.path.join(MEDIA_FILES, x, y)
-            for y in os.listdir(os.path.join(MEDIA_FILES, x))
-            if os.path.join(MEDIA_FILES, x, y) in missing_content
+            MEDIA_FILES / x / y
+            for y in os.listdir(MEDIA_FILES / x)
+            if MEDIA_FILES / x / y in missing_content
         ]
-        if len(contents) == 0:
-            continue
-        elif len(contents) == 1:
+        if len(contents) < 2:
             continue
         results[x] = contents
     return results
 
 
-def incremental_gather_films_data() -> dict[str, list[str]]:
+def incremental_gather_films_data() -> dict[str, list[Path]]:
     folders = os.listdir(MEDIA_FILES)
     missing_content_data = execute_query("select * from incremental_load_content()")
     missing_content = [x[0] for x in missing_content_data]
@@ -226,13 +215,11 @@ def incremental_gather_films_data() -> dict[str, list[str]]:
         if x == "images":
             continue
         contents = [
-            os.path.join(MEDIA_FILES, x, y)
-            for y in os.listdir(os.path.join(MEDIA_FILES, x))
-            if os.path.join(MEDIA_FILES, x, y) in missing_content
+            MEDIA_FILES / x / y
+            for y in os.listdir(MEDIA_FILES / x)
+            if MEDIA_FILES / x / y in missing_content
         ]
-        if len(contents) == 0:
-            continue
-        elif len(contents) > 1:
+        if len(contents) == 0 or len(contents) > 1:
             continue
         results[x] = contents
     return results
@@ -256,25 +243,28 @@ def write_films_shows_data(incremental: bool) -> None:
         for file in episodes:
             season, episode = episode_data(Path(file))
             file_data = execute_query(f"select * from content where file = '{file}'")
-            file_key: int = file_data[0][0]
+            show_file_key: int = file_data[0][0]
             execute_statement(
                 f"""INSERT INTO shows (file_key, show, season, episode) VALUES (
-                {file_key}, '{show}', {season}, {episode}
+                {show_file_key}, '{show}', {season}, {episode}
                 );"""
             )
     for film, file in films.items():
         file_data = execute_query(f"select * from content where file = '{file[0]}'")
-        file_key: int = file_data[0][0]
+        film_file_key: int = file_data[0][0]
         execute_statement(
             f"""INSERT INTO films (file_key, film) VALUES (
-            {file_key}, '{film}'
+            {film_file_key}, '{film}'
             );"""
         )
 
 
 def build_functions() -> None:
-    shell_path = os.path.join(
-        Path(__file__).parent.parent.parent, "infra", "postgres", "reset_functions.sh"
+    shell_path = (
+        Path(__file__).parent.parent.parent
+        / "infra"
+        / "postgres"
+        / "reset_functions.sh"
     )
     subprocess.run(["bash", shell_path])
 

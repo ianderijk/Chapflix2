@@ -83,7 +83,7 @@ class Player:
         self.current_selection: Optional[str] = None
 
     def format_filepath(self, path: Path) -> str:
-        """Path object converted to a string so it can be made relative?"""
+        """Path object converted to a string so it can be made relative"""
         path_list = str(path).split("/")
         trimmed_path = "/".join(path_list[path_list.index("content") :])
         return trimmed_path
