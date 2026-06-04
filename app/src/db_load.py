@@ -1,16 +1,8 @@
-import argparse
-from .dbconn import initial_build, incremental_build
+from app.src.content import load_db
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("mode", choices=["initial", "incremental"])
-    args = parser.parse_args()
-
-    if args.mode == "initial":
-        initial_build()
-    else:
-        incremental_build()
+    load_db()
 
 
 if __name__ == "__main__":
