@@ -223,7 +223,7 @@ def load_films(films: list[Film]) -> None:
 
 def _tables_exist() -> bool:
     tables_data = execute_query(
-        "select table_name from information_schema.tables; where table_schema = 'public'"
+        "select table_name from information_schema.tables where table_schema = 'public';"
     )
     tables = [x[0] for x in tables_data]
     return all(x in tables for x in TABLES.keys())
