@@ -89,7 +89,7 @@ class Player:
         self.set_current_selection()
         return self.format_filepath(filepath)
 
-    def get_film_path(self, film) -> str:
+    def get_film_path(self, film: str) -> str:
         file_data = execute_query(f"select * from get_film_path('{film}')")
         filepath = Path(file_data[0][0])
         self.record_played_file(filepath)
@@ -124,7 +124,7 @@ class Player:
         self.playable_films = self.drop_down_lists(self.get_film_options())
 
     def set_playable_shows(self) -> None:
-        """Sets the attribute for the app's initial dropdown list of playable films"""
+        """Sets the attribute for the app's initial dropdown list of playable shows"""
         self.playable_shows = self.drop_down_lists(self.get_show_options())
 
     def get_selection_last_played(self, selection: str) -> str:

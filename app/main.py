@@ -182,7 +182,7 @@ app.layout = html.Div(  # outer most div, whole page
         allow_duplicate=True,
     ),
     Input(component_id="VideoEvents", component_property="event"),
-    prevent_intial_call=True,
+    prevent_initial_call=True,
 )
 def autoplay_next_episode(
     event: EventListener,
@@ -372,7 +372,7 @@ def play_episode(
     suppress_callback_exceptions=True,
     prevent_initial_callback=True,
 )
-def write_pasued_time(_, data: dict[str, float]) -> None:
+def write_paused_time(_, data: dict[str, float]) -> None:
     if data and "target.currentTime" in data.keys():
         seconds = data["target.currentTime"]
         player.record_paused_file(seconds)
