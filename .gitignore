@@ -22,5 +22,7 @@ wheels/
 # Media files
 /content
 
+# Personal
 tasks.md
 infra/docker/docker_commands.md
+scratchpad.py

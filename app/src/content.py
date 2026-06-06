@@ -98,7 +98,7 @@ def _get_loaded_content() -> list[Path]:
     return records
 
 
-MEDIA_FILES = (Path(__file__).parent.parent.parent) / "content"
+MEDIA_FILES = Path("/media/ianderijk/Backup/Chapflix2/content")
 LOADED_CONTENT = _get_loaded_content()
 FILE_KEY = FileKey()
 
