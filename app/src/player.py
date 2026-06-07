@@ -103,7 +103,7 @@ class Player:
         return self._user
 
     @user.setter
-    def set_user(self, display_name: str) -> None:
+    def user(self, display_name: str) -> None:
         self._user = get_user(display_name)
 
     @property
@@ -115,26 +115,28 @@ class Player:
         return self._last_played
 
     @last_played.setter
-    def set_last_played(self, user: User) -> None:
+    def last_played(self, user: User) -> None:
         self._last_played = get_last_played(user.id_)
+        self._set_last_played_attributes()
+
+    def _set_last_played_attributes(self) -> None:
+        if self.last_played.media_type == "film":
+            self.last_played_name = self.last_played.film
+        else:
+            self.last_played_name = format_auto_play_string(self.last_played)
+        self.last_played_file = _format_filepath(Path(self.last_played.file))
 
     def set_current_selection(self) -> None:
         last_played = get_last_played(self.user.id_)
+        self.last_played = self.user
         if last_played.media_type == "film":
             self.current_selection = last_played.film
         else:
             self.current_selection = format_auto_play_string(last_played)
 
-    def set_last_played_attributes(self, last_played: LastPlayed) -> None:
-        if last_played.media_type == "film":
-            self.last_played_name = last_played.film
-        else:
-            self.last_played_name = format_auto_play_string(last_played)
-        self.last_played_file = _format_filepath(Path(last_played.file))
-
     def get_last_played_string(self) -> str:
         last_played = get_last_played(self.user.id_)
-        self.set_last_played_attributes(last_played)
+        self._set_last_played_attributes()
         if last_played.media_type == "film":
             if last_played.film:
                 return last_played.film

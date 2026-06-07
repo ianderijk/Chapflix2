@@ -4,7 +4,7 @@ from dash.dependencies import Input, Output
 from flask import send_from_directory
 import dash
 from pathlib import Path
-from app.src.player import Player
+from app.src.player import Player, format_auto_play_string
 from app.src.logger import (
     log_app_starting,
     log_user_selection,
@@ -15,7 +15,7 @@ from app.src.logger import (
 player = Player()
 
 
-def default_event_listener(file: str | None) -> EventListener | None:
+def default_event_listener(file: Path | str | None) -> EventListener | None:
     if not file:
         return
     return EventListener(
@@ -30,7 +30,7 @@ def default_event_listener(file: str | None) -> EventListener | None:
             html.Video(
                 controls=True,
                 id="Player",
-                src=file,
+                src=str(file),
                 autoPlay=True,
             ),
         ],
@@ -43,7 +43,7 @@ server = app.server
 
 
 @server.route("/content/<path:filename>")
-def serve_content(filename: str):
+def serve_content(filename: Path):
     return send_from_directory(VIDEO_DIR, filename)
 
 
@@ -204,9 +204,10 @@ def autoplay_next_episode(
 )
 def set_user(user: str) -> str:
     if user:
-        player.set_user(user)
+        player.user = user
         log_user_selection(player)
-        return player.get_last_played()
+        player.last_played = player.user
+        return player.get_last_played_string()
     return ""
 
 
@@ -360,7 +361,7 @@ def play_episode(
     elif not show or show == "Pick a show" or not season or not episode:
         return None, None
     file = player.get_show_path(show, season, episode)
-    display_string = player.get_last_played()
+    display_string = format_auto_play_string(player.last_played)
     log_file_played(player, "play_episode")
     return default_event_listener(file), display_string
 
