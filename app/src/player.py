@@ -1,22 +1,12 @@
-######################################################################
-# The refactor has begun and there are some ideas that probably hold
-# from the work that's been done so far. That said, there's more work
-# and not everything that's been done so far ought to make it into the
-# final version of this module. For example, LastPlayed probably should
-# become generalised so that it's applicable for the get_next_episode,
-# get_previous_episode methods and others.
-# The basic idea is to centralise repeated logic into functions that
-# belong at the module level. The class becomes minimised and as far as
-# possible methods should not be coupled. Where multiple methods do
-# require coupling this should happen in a dedicated method so that
-# each one can be tested in isolation thus giving confidence that the
-# method for coupling is robust.
-######################################################################
-from typing import Optional, NamedTuple
+from typing import Literal, Optional, NamedTuple
 from pathlib import Path
 from datetime import datetime
 from app.src.dbutils import execute_query, execute_statement
 from app.src.content import MEDIA_FILES
+
+
+class AutoPlayError(RuntimeError):
+    pass
 
 
 LastPlayed = NamedTuple(
@@ -30,6 +20,10 @@ LastPlayed = NamedTuple(
         ("episode", Optional[int]),
         ("file", str),
     ],
+)
+
+AutoPlayed = NamedTuple(
+    "AutoPlayed", [("file", str), ("show", str), ("season", int), ("episode", int)]
 )
 
 User = NamedTuple("User", [("id_", int), ("name", str)])
@@ -63,71 +57,92 @@ def drop_down_lists(lst: list[str]) -> list[dict[str, str]]:
     return [{"label": x, "value": x} for x in lst]
 
 
-def create_display_string(): ...
+def get_auto_play(
+    previous_or_next: Literal["previous", "next"], user: User
+) -> AutoPlayed:
+    match previous_or_next:
+        case "previous":
+            data = execute_query(f"select * from get_previous_episode({user.id_});")
+        case "next":
+            data = execute_query(f"select * from get_next_episode({user.id_});")
+        case _:
+            raise AutoPlayError(
+                f'Auto play feature must provide "previous" or "next". {previous_or_next} provided.'
+            )
+    values = data[0]
+    return AutoPlayed(*values)
+
+
+def format_auto_play_string(playing: AutoPlayed | LastPlayed) -> str:
+    return f"Now playing: {playing.show} season {playing.season}, episode {playing.episode}"
 
 
 class Player:
-    user_id: Optional[int]
-    user_display_name: Optional[str]
+    _user: Optional[User]
+    _last_played: Optional[LastPlayed]
     current_selection: Optional[str]
     current_play_num: Optional[int]
-    last_played_key: Optional[int]
-    last_played_name: Optional[str]
-    last_played_file: Optional[Path]
     playable_films: list[dict[str, str]]
     playable_shows: list[dict[str, str]]
 
     def __init__(self) -> None:
-        # explicit runtime initialisation; cheap and clear
-        self.user_id = None
-        self.user_display_name = None
+        self._user = None
+        self._last_played = None
         self.current_selection = None
         self.current_play_num = None
-        self.last_played_key = None
-        self.last_played_name = None
-        self.last_played_file = None
         self.playable_films = []
         self.playable_shows = []
 
-        # safe to call these if they don't rely on other attributes being set
-        # self.set_playable_films()
-        # self.set_playable_shows()
+        self.set_playable_films()
+        self.set_playable_shows()
 
+    @property
+    def user(self) -> User:
+        if self._user is None:
+            raise RuntimeError("set_user() must be called before performing operations")
+        return self._user
+
+    @user.setter
     def set_user(self, display_name: str) -> None:
-        self.user = get_user(display_name)
+        self._user = get_user(display_name)
+
+    @property
+    def last_played(self) -> LastPlayed:
+        if self._last_played is None:
+            raise RuntimeError(
+                "set_last_played must be called before performing operations"
+            )
+        return self._last_played
+
+    @last_played.setter
+    def set_last_played(self, user: User) -> None:
+        self._last_played = get_last_played(user.id_)
 
     def set_current_selection(self) -> None:
         last_played = get_last_played(self.user.id_)
         if last_played.media_type == "film":
             self.current_selection = last_played.film
-        self.current_selection = f"{last_played.show}, season {last_played.season} episode {last_played.episode}"
+        else:
+            self.current_selection = format_auto_play_string(last_played)
 
     def set_last_played_attributes(self, last_played: LastPlayed) -> None:
         if last_played.media_type == "film":
             self.last_played_name = last_played.film
         else:
-            self.last_played_name = f"{last_played.show} - Season {last_played.season} Episode {last_played.episode}"
+            self.last_played_name = format_auto_play_string(last_played)
         self.last_played_file = _format_filepath(Path(last_played.file))
 
     def get_last_played_string(self) -> str:
-        ######################################################################
-        # I still don't like that this method is coupled to set_last_played
-        # but for now at least the logic is separated into a different method.
-        # Revisit this coupling further into the refactor and see if there's
-        # a cleaner, uncoupled approach.
-        ######################################################################
         last_played = get_last_played(self.user.id_)
         self.set_last_played_attributes(last_played)
         if last_played.media_type == "film":
             if last_played.film:
                 return last_played.film
 
-        if last_played.show:
-            return last_played.show
+        if last_played.show and self.last_played_name:
+            return self.last_played_name
 
-        raise Exception(
-            "This exception won't ever get called and only exists to satisfy pre-commit. Plus, this method is being refactored anyway."
-        )
+        raise RuntimeError("Last played string cannot be empty")
 
     def record_played_file(self, file: Path) -> None:
         playtime = datetime.now()
@@ -165,9 +180,6 @@ class Player:
         self.record_played_file(filepath)
         self.set_current_selection()
         return _format_filepath(filepath)
-
-    def drop_down_lists(self, lst: list[str]) -> list[dict[str, str]]:
-        return [{"label": x, "value": x} for x in lst]
 
     def get_film_options(self) -> list[str]:
         film_data = execute_query("select distinct film from films")
@@ -214,42 +226,30 @@ class Player:
         if last_played.media_type == "film":
             return None, None
 
-        display_string = f"Now playing: {last_played.show} Season {last_played.season} episode {last_played.episode}"
+        display_string = format_auto_play_string(last_played)
         path = Path(last_played.file)
         self.record_played_file(path)
         self.set_current_selection()
         return _format_filepath(path), display_string
 
     def get_next_episode(self) -> tuple[Path | None, str]:
-        next_episode_data = execute_query(
-            f"select * from get_next_episode({self.user.id_})"
-        )
-        next_episode_path = next_episode_data[0][0]
-        if next_episode_path:
-            show = next_episode_data[0][1]
-            season = next_episode_data[0][2]
-            episode = next_episode_data[0][3]
-            display_string = f"Now playing: {show} season {season}, episode {episode}"
-            self.record_played_file(next_episode_path)
+        auto_played = get_auto_play("next", self.user)
+        if auto_played.file:
+            self.record_played_file(Path(auto_played.file))
             self.set_current_selection()
-            return _format_filepath(next_episode_path), display_string
+            return _format_filepath(Path(auto_played.file)), format_auto_play_string(
+                auto_played
+            )
+
         return None, "There is nothing left to play! Time to pick another show."
 
     def get_previous_episode(self) -> tuple[Path | None, str]:
-        previous_episode_data = execute_query(
-            f"select * from get_previous_episode({self.user.id_})"
-        )
-        previous_episode_path = previous_episode_data[0][0]
-        if previous_episode_path:
-            show = previous_episode_data[0][1]
-            season = previous_episode_data[0][2]
-            episode = previous_episode_data[0][3]
-            display_string = f"Now playing: {show} season {season}, episode {episode}"
-            self.record_played_file(previous_episode_path)
+        auto_played = get_auto_play("previous", self.user)
+        if auto_played.file:
+            self.record_played_file(Path(auto_played.file))
             self.set_current_selection()
-            return _format_filepath(previous_episode_path), display_string
+            return _format_filepath(Path(auto_played.file)), format_auto_play_string(
+                auto_played
+            )
+
         return None, "There is nothing left to play! Time to pick another show."
-
-
-if __name__ == "__main__":
-    player = Player()
