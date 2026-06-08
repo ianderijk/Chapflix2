@@ -9,6 +9,10 @@ class AutoPlayError(RuntimeError):
     pass
 
 
+class MissingFileKey(RuntimeError):
+    pass
+
+
 LastPlayed = NamedTuple(
     "LastPlayed",
     [
@@ -27,6 +31,14 @@ AutoPlayed = NamedTuple(
 )
 
 User = NamedTuple("User", [("id_", int), ("name", str)])
+
+
+def _get_filekeys() -> dict[Path, int]:
+    file_keys_data = execute_query("select * from content;")
+    return {Path(x[1]): int(x[0]) for x in file_keys_data}
+
+
+FILE_KEYS = _get_filekeys()
 
 
 def _format_filepath(path: Path) -> Path:
@@ -48,9 +60,12 @@ def get_user(display_name: str) -> User:
 
 
 def get_file_key(file: Path) -> int:
-    file_data = execute_query(f"select file_key from content where file = '{file}'")
-    file_key = file_data[0][0]
-    return int(file_key)
+    key = FILE_KEYS.get(file)
+    if key is not None:
+        return key
+    raise MissingFileKey(
+        f"{file.relative_to(file.parent)} does not have a corresponding key"
+    )
 
 
 def drop_down_lists(lst: list[str]) -> list[dict[str, str]]:
@@ -65,10 +80,6 @@ def get_auto_play(
             data = execute_query(f"select * from get_previous_episode({user.id_});")
         case "next":
             data = execute_query(f"select * from get_next_episode({user.id_});")
-        case _:
-            raise AutoPlayError(
-                f'Auto play feature must provide "previous" or "next". {previous_or_next} provided.'
-            )
     values = data[0]
     return AutoPlayed(*values)
 
@@ -77,11 +88,18 @@ def format_auto_play_string(playing: AutoPlayed | LastPlayed) -> str:
     return f"Now playing: {playing.show} season {playing.season}, episode {playing.episode}"
 
 
+def get_play_num(user: User) -> int:
+    play_num_data = execute_query(
+        f"select play_num from history where user_id = {user.id_} order by time desc limit 1"
+    )
+    return int(play_num_data[0][0])
+
+
 class Player:
     _user: Optional[User]
     _last_played: Optional[LastPlayed]
     current_selection: Optional[str]
-    current_play_num: Optional[int]
+    current_play_num: int
     playable_films: list[dict[str, str]]
     playable_shows: list[dict[str, str]]
 
@@ -89,7 +107,7 @@ class Player:
         self._user = None
         self._last_played = None
         self.current_selection = None
-        self.current_play_num = None
+        self.current_play_num = 0
         self.playable_films = []
         self.playable_shows = []
 
@@ -99,18 +117,21 @@ class Player:
     @property
     def user(self) -> User:
         if self._user is None:
-            raise RuntimeError("set_user() must be called before performing operations")
+            raise RuntimeError(
+                "User has not been set. A user must be set before proceeding."
+            )
         return self._user
 
     @user.setter
     def user(self, display_name: str) -> None:
         self._user = get_user(display_name)
+        self.current_play_num = get_play_num(self._user)
 
     @property
     def last_played(self) -> LastPlayed:
         if self._last_played is None:
             raise RuntimeError(
-                "set_last_played must be called before performing operations"
+                "Last played cannot be determined by user selection. A user must be set before proceeding."
             )
         return self._last_played
 
@@ -118,70 +139,6 @@ class Player:
     def last_played(self, user: User) -> None:
         self._last_played = get_last_played(user.id_)
         self._set_last_played_attributes()
-
-    def _set_last_played_attributes(self) -> None:
-        if self.last_played.media_type == "film":
-            self.last_played_name = self.last_played.film
-        else:
-            self.last_played_name = format_auto_play_string(self.last_played)
-        self.last_played_file = _format_filepath(Path(self.last_played.file))
-
-    def set_current_selection(self) -> None:
-        last_played = get_last_played(self.user.id_)
-        self.last_played = self.user
-        if last_played.media_type == "film":
-            self.current_selection = last_played.film
-        else:
-            self.current_selection = format_auto_play_string(last_played)
-
-    def get_last_played_string(self) -> str:
-        last_played = get_last_played(self.user.id_)
-        self._set_last_played_attributes()
-        if last_played.media_type == "film":
-            if last_played.film:
-                return last_played.film
-
-        if last_played.show and self.last_played_name:
-            return self.last_played_name
-
-        raise RuntimeError("Last played string cannot be empty")
-
-    def record_played_file(self, file: Path) -> None:
-        playtime = datetime.now()
-        file_key = get_file_key(file)
-        execute_statement(
-            f"""
-            INSERT INTO history (file_key, time, user_id) VALUES ({file_key}, '{playtime}', {self.user.id_})
-            """
-        )
-        self.set_latest_play_num()
-
-    def set_latest_play_num(self) -> None:
-        play_num_data = execute_query(
-            f"select play_num from history where user_id = {self.user.id_} order by time desc limit 1"
-        )
-        self.current_play_num = int(play_num_data[0][0])
-
-    def record_paused_file(self, seconds: float) -> None:
-        execute_statement(
-            f"insert into paused_content (play_num, user_id, video_progress) values ({self.current_play_num}, {self.user.id_}, {seconds})"
-        )
-
-    def get_show_path(self, show: str, season: int, episode: int) -> Path:
-        file_data = execute_query(
-            f"select * from get_show_path('{show}', {season}, {episode})"
-        )
-        filepath = Path(file_data[0][0])
-        self.record_played_file(filepath)
-        self.set_current_selection()
-        return _format_filepath(filepath)
-
-    def get_film_path(self, film: str) -> Path:
-        file_data = execute_query(f"select * from get_film_path('{film}')")
-        filepath = Path(file_data[0][0])
-        self.record_played_file(filepath)
-        self.set_current_selection()
-        return _format_filepath(filepath)
 
     def get_film_options(self) -> list[str]:
         film_data = execute_query("select distinct film from films")
@@ -211,11 +168,63 @@ class Player:
         """Sets the attribute for the app's initial dropdown list of playable shows"""
         self.playable_shows = drop_down_lists(self.get_show_options())
 
-    def get_selection_last_played(self, selection: str) -> str:
-        selection_data = execute_query(f"select * from get_show('{selection}');")
-        if len(selection_data) == 0:
-            return "Show has not been watched, start from the beginning!"
-        return f"{selection_data[0][0]}, Season {selection_data[0][1]} Episode {selection_data[0][2]}"
+    def _set_last_played_attributes(self) -> None:
+        match self.last_played.media_type:
+            case "film":
+                self.last_played_name = self.last_played.film
+            case "show":
+                self.last_played_name = format_auto_play_string(self.last_played)
+        self.last_played_file = _format_filepath(Path(self.last_played.file))
+
+    def set_current_selection(self) -> None:
+        last_played = get_last_played(self.user.id_)
+        # The below line feels odd because it looks like it's setting one
+        # attribute as a reference to another but the last_played attribute
+        # is a property with a setter which must be passed the user attribute.
+        self.last_played = self.user
+        match self.last_played.media_type:
+            case "film":
+                self.current_selection = last_played.film
+            case "show":
+                self.current_selection = format_auto_play_string(last_played)
+
+    def get_last_played_string(self) -> str:
+        self._set_last_played_attributes()
+        if self.last_played_name:
+            return self.last_played_name
+
+        raise RuntimeError("Last played string cannot be empty")
+
+    def record_played_file(self, file: Path) -> None:
+        playtime = datetime.now()
+        file_key = get_file_key(file)
+        execute_statement(
+            f"""
+            INSERT INTO history (file_key, time, user_id) VALUES ({file_key}, '{playtime}', {self.user.id_})
+            """
+        )
+        self.current_play_num += 1
+
+    def record_paused_file(self, seconds: float) -> None:
+        execute_statement(
+            f"insert into paused_content (play_num, user_id, video_progress) values ({self.current_play_num}, {self.user.id_}, {seconds})"
+        )
+
+    def get_show_path(self, show: str, season: int, episode: int) -> Path:
+        file_data = execute_query(
+            f"select * from get_show_path('{show}', {season}, {episode})"
+        )
+        filepath = Path(file_data[0][0])
+        self.record_played_file(filepath)  # Write to history table
+        self.set_current_selection()  # Reads from history table
+        return _format_filepath(filepath)
+
+    def get_film_path(self, film: str) -> Path:
+        file_data = execute_query(f"select * from get_film_path('{film}')")
+        filepath = Path(file_data[0][0])
+        self.record_played_file(filepath)  # Write to history table
+        self.set_current_selection()  # Reads from history table
+        return _format_filepath(filepath)
 
     def get_continue_watching_from(self) -> float:
         seconds_data = execute_query(

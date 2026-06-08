@@ -11,7 +11,7 @@ def log_app_starting() -> None:
 
 
 def log_user_selection(player: Player) -> None:
-    logger.info(f"User {player.user_display_name} selected")
+    logger.info(f"User {player.user.name} selected")
 
 
 def log_file_played(player: Player, function_name: str) -> None:
@@ -20,5 +20,5 @@ def log_file_played(player: Player, function_name: str) -> None:
 
 def log_file_paused(player: Player) -> None:
     logger.info(
-        f"{player.user_display_name} paused {player.current_selection} at {datetime.now()}"
+        f"{player.user.name} paused {player.current_selection} at {datetime.now()}"
     )
