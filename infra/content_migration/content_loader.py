@@ -1,50 +1,51 @@
 import os
 import subprocess
 import time
+from pathlib import Path
 
-SOURCE_ROOT = os.path.join("/media", "idr", "ExtDrive", "Chapflix2", "content")
-TARGET_ROOT = os.path.join("/media", "ianderijk", "Backup", "Chapflix2", "content")
-KEY_PATH = os.path.join("/home", "idr", ".ssh", "id_rsa_target")
+SOURCE_ROOT = Path("/media/idr/ExtDrive/Chapflix2/content")
+TARGET_ROOT = Path("/media/ianderijk/Backup/Chapflix2/content")
+KEY_PATH = Path("/home/idr/.ssh/id_rsa_target")
 TARGET_ADDRESS = "ianderijk@192.168.0.29"
 
 
 class Migration:
     def __init__(self) -> None:
-        self.source_folders: list[str] = os.listdir(SOURCE_ROOT)
-        self.source_assets: list[str] = self.get_source_assets()
-        self.target_folders: list[str] = self.get_target_folders()
-        self.target_assets: list[str] = self.get_target_assets()
+        self.source_folders: list[Path] = [Path(x) for x in os.listdir(SOURCE_ROOT)]
+        self.source_assets: list[Path] = self.get_source_assets()
+        self.target_folders: list[Path] = self.get_target_folders()
+        self.target_assets: list[Path] = self.get_target_assets()
         self.total_memory_migrating: int = 0
-        self.file_memories: dict[str, int] = {}
+        self.file_memories: dict[Path, int] = {}
         self.time_elapsed: float = 0.0
 
-    def get_source_assets(self) -> list[str]:
+    def get_source_assets(self) -> list[Path]:
         files = []
         for x in self.source_folders:
             if x == "images":
                 continue
-            files += [
-                os.path.join(x, y) for y in os.listdir(os.path.join(SOURCE_ROOT, x))
-            ]
+            files += [x / y for y in os.listdir(SOURCE_ROOT / x)]
         return files
 
-    def list_dir_ssh(self, folder: str = "", files: bool = False) -> list[str]:
+    def list_dir_ssh(self, folder: Path = Path(), files: bool = False) -> list[str]:
         command = (
             f'find "{TARGET_ROOT}/{folder}" -maxdepth 1 -type f -printf "%f\n"'
             if files
             else f'find /{TARGET_ROOT} -maxdepth 1 -type d -printf "%f\n"'
         )
-        return ["ssh", "-i", KEY_PATH, TARGET_ADDRESS, command]
+        return ["ssh", "-i", str(KEY_PATH), TARGET_ADDRESS, command]
 
-    def get_target_folders(self) -> list[str]:
+    def get_target_folders(self) -> list[Path]:
         target_data = subprocess.run(
             self.list_dir_ssh(), capture_output=True, text=True
         )
         folder_names = target_data.stdout
-        target_folder_names = [x for x in folder_names.split("\n") if x != "content"]
+        target_folder_names = [
+            Path(x) for x in folder_names.split("\n") if x != "content"
+        ]
         return target_folder_names
 
-    def get_target_assets(self) -> list[str]:
+    def get_target_assets(self) -> list[Path]:
         files = []
         for x in self.target_folders:
             file_data = subprocess.run(
@@ -53,33 +54,32 @@ class Migration:
                 text=True,
             )
             file_names = file_data.stdout.split("\n")
-            files += [f"{x}/{y}" for y in file_names]
+            files += [Path(x) / y for y in file_names]
         return files
 
-    def find_folders_to_create(self) -> list[str]:
+    def find_folders_to_create(self) -> list[Path]:
         return [x for x in self.source_folders if x not in self.target_folders]
 
-    def missing_folders_command(self, folder: str) -> list[str]:
-        return ["ssh", "-i", KEY_PATH, TARGET_ADDRESS, f"mkdir -p {folder}"]
+    def missing_folders_command(self, folder: Path) -> list[str]:
+        return ["ssh", "-i", str(KEY_PATH), TARGET_ADDRESS, f"mkdir -p {folder}"]
 
     def create_missing_folders(self) -> None:
         missing_folders = self.find_folders_to_create()
         for x in missing_folders:
-            path = os.path.join(TARGET_ROOT, x)
+            path = TARGET_ROOT / x
             subprocess.run(self.missing_folders_command(path))
 
-    def find_files_to_migrate(self) -> list[tuple[str, str]]:
+    def find_files_to_migrate(self) -> list[tuple[Path, Path]]:
         migration_assets = [
             x for x in self.source_assets if x not in self.target_assets
         ]
         migration_asset_pairs = [
-            (os.path.join(SOURCE_ROOT, x), os.path.join(TARGET_ROOT, x))
-            for x in migration_assets
+            (SOURCE_ROOT / x, TARGET_ROOT / x) for x in migration_assets
         ]
         return migration_asset_pairs
 
     def calculate_migrating_memory(
-        self, migration_pairs: list[tuple[str, str]]
+        self, migration_pairs: list[tuple[Path, Path]]
     ) -> None:
         for x, _ in migration_pairs:
             filesize = os.path.getsize(x)
@@ -142,7 +142,7 @@ class Migration:
             (
                 "cd /media/ianderijk/Backup/Chapflix2/ &&"
                 "source .venv/bin/activate &&"
-                "python3 -m app.src.db_load incremental"
+                "python3 -m app.src.db_load"
             ),
         ]
         subprocess.run(command)

@@ -8,3 +8,6 @@ typecheck:
 	uv run ty check
 
 check: format lint typecheck
+
+test:
+	uv run pytest

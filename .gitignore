@@ -9,9 +9,6 @@ wheels/
 # Virtual environments
 .venv
 
-# Media files
-/assets/content
-
 # Dev dependency caches
 .pytest_cache/
 .ruff_cache/
@@ -25,4 +22,7 @@ wheels/
 # Media files
 /content
 
-/**/*.md
+# Personal
+tasks.md
+infra/docker/docker_commands.md
+scratchpad.py
