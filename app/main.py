@@ -2,6 +2,7 @@ from dash import dcc, html, State
 from dash_extensions import EventListener
 from dash.dependencies import Input, Output
 from flask import send_from_directory
+from typing import cast
 import dash
 from pathlib import Path
 from app.src.player import Player, format_auto_play_string
@@ -131,7 +132,7 @@ def build_film_picker(player: "Player") -> html.Div:
             html.H5("Films"),
             dcc.Dropdown(
                 id=ID_FILM_PICKER,
-                options=player.playable_films,
+                options=cast(list, player.playable_films),
                 placeholder="Pick a film",
                 value="Pick a film",
                 searchable=False,
@@ -146,7 +147,7 @@ def build_show_picker(player: "Player") -> html.Div:
             html.H5("TV Shows"),
             dcc.Dropdown(
                 id=ID_SHOW_PICKER,
-                options=player.playable_shows,
+                options=cast(list, player.playable_shows),
                 value="Pick a show",
                 placeholder="Pick a show",
                 searchable=False,
