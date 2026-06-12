@@ -1,12 +1,14 @@
 import pytest  # noqa: F401
 import importlib
 import os
+import time
 from pathlib import Path
 from unittest.mock import patch
 from sqlalchemy import create_engine, text
 from testcontainers.postgres import PostgresContainer
 from datetime import datetime
 
+DB_FILE_PATH_RECORDS_ROOT = Path("/media/ianderijk/Backup/Chapflix2/content")
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -20,15 +22,15 @@ def _read_sql_file(path: Path) -> str:
 
 @pytest.fixture(scope="session")
 def postgres_container():
-    with PostgresContainer("postgres:15") as pg:
-        pg.start()
-        url = pg.get_connection_url()
+    with PostgresContainer("postgres:15") as postgres:
+        url = postgres.get_connection_url()
+        time.sleep(1)
         yield url
 
 
 @pytest.fixture(scope="session")
-def setup_test_db(pg_container):
-    url = postgres_container()
+def setup_test_db(postgres_container):
+    url = postgres_container
     engine = create_engine(url)
 
     create_schema_proc = _read_sql_file(
@@ -41,24 +43,34 @@ def setup_test_db(pg_container):
         conn.execute(text("CALL create_schema_tables();"))
         conn.commit()
 
+        # Essential to maintain ordering here due to interdependencies within functions
         functions_dir = REPO_ROOT / "infra" / "postgres" / "dbo" / "functions"
-        function_files = [functions_dir / x for x in os.listdir(functions_dir)]
+        function_files = [
+            functions_dir / "get_film_path.sql",
+            functions_dir / "get_show_path.sql",
+            functions_dir / "get_show.sql",
+            functions_dir / "incremental_load.sql",
+            functions_dir / "get_last_played.sql",
+            functions_dir / "get_next_episode.sql",
+            functions_dir / "get_previous_episode.sql",
+        ]
+
         for file in function_files:
-            function = file.read_text()
+            function = _read_sql_file(file)
             conn.execute(text(function))
             conn.commit()
 
-        content_dir = REPO_ROOT / "content"
+        content_dir = DB_FILE_PATH_RECORDS_ROOT / "content"
 
         show_file1 = str(content_dir / "TestShow" / "S1E1.mp4")
         show_file2 = str(content_dir / "TestShow" / "S1E2.mp4")
-        film_file = show_file1 = str(content_dir / "TestFilm" / "Film.mp4")
+        film_file = str(content_dir / "TestFilm" / "Film.mp4")  # Fixed typo
 
         conn.execute(
             text(
                 """INSERT INTO content (file_key, file) VALUES
-            (1, :f1), (2, :f2), (3, :f3)
-            """
+                (1, :f1), (2, :f2), (3, :f3)
+                """
             ),
             {"f1": show_file1, "f2": show_file2, "f3": film_file},
         )
@@ -66,7 +78,7 @@ def setup_test_db(pg_container):
 
         conn.execute(
             text("INSERT INTO films (file_key, film) VALUES (3, :f1)"),
-            {"f1": film_file},
+            {"f1": "TestFilm"},  # Just the film name, not the path
         )
         conn.commit()
 
@@ -74,22 +86,19 @@ def setup_test_db(pg_container):
             text(
                 """
                 INSERT INTO shows (file_key, show, season, episode) VALUES
-                (1, :f1), (2, :f2)
+                (1, 'TestShow', 1, 1), (2, 'TestShow', 1, 2)
                 """
             ),
-            {"f1": show_file1, "f2": show_file2},
         )
         conn.commit()
 
-        conn.execute(
-            text("INSERT INTO users (user_id, display_name) VALUES (1, 'Test')")
-        )
+        conn.execute(text("INSERT INTO users (display_name) VALUES ('Test')"))
         conn.commit()
 
         conn.execute(
             text("""
-                INSERT INTO history (play_num, file_key, time, user_id) VALUES
-                (1, 1, :dt, 1)
+                INSERT INTO history (file_key, time, user_id) VALUES
+                (1, :dt, 1)
                 """),
             {"dt": datetime.now()},
         )

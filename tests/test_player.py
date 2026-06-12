@@ -12,7 +12,7 @@ from app.src.player import (
 )
 
 
-def test_get_last_played():
+def test_get_last_played(setup_test_db):
     with patch(
         "app.src.player.execute_query",
         return_value=[
@@ -40,7 +40,7 @@ def test_get_last_played():
     assert result == expected
 
 
-def test_get_user():
+def test_get_user(setup_test_db):
     with patch("app.src.player.execute_query", return_value=[(1,)]):
         result = get_user("Test")
     expected = User(1, "Test")
