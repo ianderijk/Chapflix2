@@ -12,6 +12,8 @@ class MissingEnvironmentError(Exception):
 
 metadata = MetaData(schema="public")
 
+_engine = None
+
 
 def _create_engine() -> Engine:
     url = getenv("DATABASE_URL")
@@ -20,19 +22,24 @@ def _create_engine() -> Engine:
     raise MissingEnvironmentError("DATABASE_URL is not defined in .env file")
 
 
-engine = _create_engine()
+def get_engine() -> Engine:
+    global _engine
+    if _engine is None:
+        _engine = _create_engine()
+    return _engine
+
 
 TABLES = {
-    "content": Table("content", metadata, autoload_with=engine),
-    "films": Table("films", metadata, autoload_with=engine),
-    "history": Table("history", metadata, autoload_with=engine),
-    "paused_content": Table("paused_content", metadata, autoload_with=engine),
-    "shows": Table("shows", metadata, autoload_with=engine),
-    "users": Table("users", metadata, autoload_with=engine),
+    "content": Table("content", metadata, autoload_with=get_engine()),
+    "films": Table("films", metadata, autoload_with=get_engine()),
+    "history": Table("history", metadata, autoload_with=get_engine()),
+    "paused_content": Table("paused_content", metadata, autoload_with=get_engine()),
+    "shows": Table("shows", metadata, autoload_with=get_engine()),
+    "users": Table("users", metadata, autoload_with=get_engine()),
 }
 
 
-def execute_statement(statement: str, engine: Engine = engine) -> None:
+def execute_statement(statement: str, engine: Engine = get_engine()) -> None:
     """Function to allow execution of statements that do not return any results
     such as create and insert"""
     with engine.connect() as conn:
@@ -40,7 +47,7 @@ def execute_statement(statement: str, engine: Engine = engine) -> None:
         conn.commit()
 
 
-def execute_query(query: str, engine: Engine = engine) -> Sequence[Row[Any]]:
+def execute_query(query: str, engine: Engine = get_engine()) -> Sequence[Row[Any]]:
     """Funciton to allow execution of queries that return results"""
     with engine.connect() as conn:
         data = conn.execute(text(query))
@@ -48,7 +55,7 @@ def execute_query(query: str, engine: Engine = engine) -> Sequence[Row[Any]]:
 
 
 def execute_bulk_insert(
-    table_name: str, values: list[dict[str, Any]], engine: Engine = engine
+    table_name: str, values: list[dict[str, Any]], engine: Engine = get_engine()
 ) -> None:
     table = TABLES[table_name]
     with engine.begin() as conn:
