@@ -20,7 +20,7 @@ def _read_sql_file(path: Path) -> str:
     return path.read_text()
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="session", autouse=True)
 def postgres_container():
     with PostgresContainer("postgres:15") as postgres:
         url = postgres.get_connection_url()
