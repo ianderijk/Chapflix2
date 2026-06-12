@@ -25,4 +25,6 @@ jobs:
         run: uv run ty check
 
       - name: Tests
+        env:
+          DATABASE_URL: postgresql://dummy:dummy@localhost/dummy
         run: uv run pytest
