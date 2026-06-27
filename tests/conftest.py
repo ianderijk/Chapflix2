@@ -28,7 +28,7 @@ def postgres_container():
         yield url
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="session", autouse=True)
 def setup_test_db(postgres_container):
     url = postgres_container
     engine = create_engine(url)
@@ -60,7 +60,7 @@ def setup_test_db(postgres_container):
             conn.execute(text(function))
             conn.commit()
 
-        content_dir = DB_FILE_PATH_RECORDS_ROOT / "content"
+        content_dir = DB_FILE_PATH_RECORDS_ROOT
 
         show_file1 = str(content_dir / "TestShow" / "S1E1.mp4")
         show_file2 = str(content_dir / "TestShow" / "S1E2.mp4")
@@ -117,3 +117,5 @@ def setup_test_db(postgres_container):
     importlib.reload(player)
 
     yield {"url": url, "engine": engine}
+
+    engine.dispose()

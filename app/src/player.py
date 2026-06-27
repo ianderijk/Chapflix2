@@ -27,7 +27,18 @@ LastPlayed = NamedTuple(
 )
 
 AutoPlayed = NamedTuple(
-    "AutoPlayed", [("file", str), ("show", str), ("season", int), ("episode", int)]
+    "AutoPlayed",
+    [
+        ("file", str | None),
+        ("show", str | None),
+        ("season", int | None),
+        ("episode", int | None),
+    ],
+)
+
+SelectionData = NamedTuple(
+    "SelectionData",
+    [("file", Path), ("plays", Optional[int]), ("last_played", Optional[str])],
 )
 
 User = NamedTuple("User", [("id_", int), ("name", str)])
@@ -211,20 +222,20 @@ class Player:
         )
 
     def get_show_path(self, show: str, season: int, episode: int) -> Path:
-        file_data = execute_query(
+        selection_data = execute_query(
             f"select * from get_show_path('{show}', {season}, {episode})"
         )
-        filepath = Path(file_data[0][0])
-        self.record_played_file(filepath)  # Write to history table
+        selection = SelectionData(*selection_data[0])
+        self.record_played_file(selection.file)  # Write to history table
         self.set_current_selection()  # Reads from history table
-        return _format_filepath(filepath)
+        return _format_filepath(selection.file)
 
     def get_film_path(self, film: str) -> Path:
-        file_data = execute_query(f"select * from get_film_path('{film}')")
-        filepath = Path(file_data[0][0])
-        self.record_played_file(filepath)  # Write to history table
+        selection_data = execute_query(f"select * from get_film_path('{film}')")
+        selection = SelectionData(*selection_data[0])
+        self.record_played_file(selection.file)  # Write to history table
         self.set_current_selection()  # Reads from history table
-        return _format_filepath(filepath)
+        return _format_filepath(selection.file)
 
     def get_continue_watching_from(self) -> float:
         seconds_data = execute_query(

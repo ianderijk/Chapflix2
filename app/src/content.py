@@ -161,7 +161,6 @@ def _process_show_content(show: Content) -> Episode:
         raise MalformedContentError(
             f"{show.filepath} contains invalid filename for episodes"
         )
-
     file_key = FILE_KEY_MAPPINGS.get(show.filepath)
     if file_key is None:
         return Episode(show_name, int(season), int(episode), FILE_KEY(), show.filepath)
