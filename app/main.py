@@ -5,7 +5,7 @@ from flask import send_from_directory
 from typing import cast
 import dash
 from pathlib import Path
-from app.src.player import Player, format_auto_play_string
+from app.src.player import Player
 from app.src.logger import (
     log_app_starting,
     log_user_selection,
@@ -322,18 +322,24 @@ def watch_next_episode(
         component_property="children",
         allow_duplicate=True,
     ),
+    Output(
+        component_id="ContinueWatchingText",
+        component_property="children",
+        allow_duplicate=True,
+    ),
     Input(component_id="FilmPicker", component_property="value"),
     Input(component_id="users", component_property="value"),
 )
-def play_film(film: str, user: str) -> None | EventListener:
+def play_film(film: str, user: str) -> tuple[None | EventListener, None | str]:
     if not user:
-        return None
+        return None, None
     elif film == "Pick a film":
-        return None
+        return None, None
     if film and film != "Pick a film":
-        file = player.get_film_path(film)
+        file, display_string = player.get_film_path(film=film)
         log_file_played(player, "play_film")
-        return default_event_listener(file)
+        return default_event_listener(file), display_string
+    return None, None
 
 
 @app.callback(
@@ -385,8 +391,9 @@ def play_episode(
         return None, None
     elif not show or show == "Pick a show" or not season or not episode:
         return None, None
-    file = player.get_show_path(show, season, episode)
-    display_string = format_auto_play_string(player.last_played)
+    file, display_string = player.get_show_path(
+        show=show, season=season, episode=episode
+    )
     log_file_played(player, "play_episode")
     return default_event_listener(file), display_string
 

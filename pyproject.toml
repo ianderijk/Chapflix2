@@ -1,7 +1,7 @@
 [project]
 name = "chaplifx2"
-version = "1.0.0"
-description = "Add your description here"
+version = "1.0.1"
+description = "A simple media app for shows and films"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
