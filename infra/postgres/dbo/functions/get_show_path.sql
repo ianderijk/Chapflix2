@@ -2,7 +2,7 @@ create or replace function get_show_path(show_ text, season integer, episode int
 returns table (
 file text,
 plays integer,
-last_played time
+last_played timestamp
 
 )
 as
@@ -12,7 +12,6 @@ with last_played as (
 		,count(file_key) as plays
 		,max(time) as last_played
 	from history
-	where file_key = 65
 	group by file_key
 )
 select c.file
