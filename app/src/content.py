@@ -198,7 +198,7 @@ def prepare_contents(
 
 def load_episodes(episodes: list[Episode]) -> None:
     content_table_values = [
-        {"file_key": x.file_key, "file": x.filepath} for x in episodes
+        {"file_key": x.file_key, "file": str(x.filepath)} for x in episodes
     ]
     shows_table_values = [
         {
@@ -214,7 +214,9 @@ def load_episodes(episodes: list[Episode]) -> None:
 
 
 def load_films(films: list[Film]) -> None:
-    content_table_values = [{"file_key": x.file_key, "file": x.filepath} for x in films]
+    content_table_values = [
+        {"file_key": x.file_key, "file": str(x.filepath)} for x in films
+    ]
     films_table_values = [{"file_key": x.file_key, "film": x.film} for x in films]
     execute_bulk_insert("content", content_table_values)
     execute_bulk_insert("films", films_table_values)
