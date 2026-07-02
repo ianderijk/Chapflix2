@@ -1,12 +1,13 @@
 [project]
 name = "chaplifx2"
-version = "1.0.1"
+version = "1.0.2"
 description = "A simple media app for shows and films"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "dash>=3.2.0",
     "dash-extensions>=1.0.20",
+    "fastapi>=0.139.0",
     "psycopg2-binary>=2.9.10",
     "python-dotenv>=1.1.1",
     "sqlalchemy>=2.0.42",
