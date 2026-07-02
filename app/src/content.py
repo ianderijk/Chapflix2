@@ -258,6 +258,9 @@ def _insert_dummy_history_records() -> None:
 
 
 def build_db() -> None:
+    # TODO: The fact that users are being written mutiple times suggests
+    # that this function is being called when it shouldn't be. Figure out
+    # why and fix it.
     _build_tables()
     _build_functions()
     _insert_users()

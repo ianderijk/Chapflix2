@@ -9,8 +9,10 @@ dependencies = [
     "dash-extensions>=1.0.20",
     "fastapi>=0.139.0",
     "psycopg2-binary>=2.9.10",
+    "pydantic>=2.12.5",
     "python-dotenv>=1.1.1",
     "sqlalchemy>=2.0.42",
+    "uvicorn>=0.49.0",
 ]
 
 [dependency-groups]
