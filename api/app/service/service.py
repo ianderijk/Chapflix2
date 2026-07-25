@@ -3,6 +3,7 @@ from typing import Any
 from utils.dbutils import execute_query
 from api.app.models.last_played import LastPlayed
 from api.app.models.auto_play import AutoPlay
+from api.app.middleware.api_logger import logger
 
 
 def _create_model_dict(model, values: list) -> dict[Any, Any]:
@@ -15,6 +16,7 @@ def _get_user_id(username: str) -> int:
     query = "select * from users where display_name = :display_name"
     params = {"display_name": username}
     data = execute_query(query, params)
+    logger.debug(f"Data from _get_user_id: {data}")
     return data[0][0]
 
 

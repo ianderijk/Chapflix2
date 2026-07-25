@@ -15,7 +15,7 @@ class InvalidUser(HTTPException):
 def _validate_username(username: str) -> None:
     if username.lower() in USERS:
         return
-    raise InvalidUser(422)
+    raise InvalidUser(404)
 
 
 @app.get("/user/{username}/last-played")

@@ -18,43 +18,36 @@ class InvalidSelectionError(RuntimeError):
     pass
 
 
-LastPlayed = NamedTuple(
-    "LastPlayed",
-    [
-        ("media_type", str),
-        ("file_key", int),
-        ("film", Optional[str]),
-        ("show", Optional[str]),
-        ("season", Optional[int]),
-        ("episode", Optional[int]),
-        ("file", str),
-    ],
-)
+class LastPlayed(NamedTuple):
+    media_type: str
+    file_key: str
+    film: str | None
+    show: str | None
+    season: int | None
+    episode: int | None
+    file: str
 
-AutoPlayed = NamedTuple(
-    "AutoPlayed",
-    [
-        ("file", str | None),
-        ("show", str | None),
-        ("season", int | None),
-        ("episode", int | None),
-    ],
-)
 
-SelectionData = NamedTuple(
-    "SelectionData",
-    [
-        ("file", Path),
-        ("plays", Optional[int]),
-        ("last_played", Optional[datetime]),
-        ("show", Optional[str]),
-        ("season", Optional[int]),
-        ("episode", Optional[int]),
-        ("film", Optional[str]),
-    ],
-)
+class AutoPlayed(NamedTuple):
+    file: str | None
+    show: str | None
+    season: int | None
+    episode: int | None
 
-User = NamedTuple("User", [("id_", int), ("name", str)])
+
+class SelectionData(NamedTuple):
+    file: Path
+    plays: int | None
+    last_played: datetime | None
+    show: str | None
+    season: int | None
+    episode: int | None
+    film: str | None
+
+
+class User(NamedTuple):
+    id_: int
+    name: str
 
 
 def _get_filekeys() -> dict[Path, int]:
@@ -113,9 +106,7 @@ def get_play_num(user: User) -> int:
 
 def _is_show(filename: str) -> bool:
     match_ = re.match(r"S(\d+)E(\d+)", filename)
-    if match_:
-        return True
-    return False
+    return bool(match_)
 
 
 def get_file_content_types() -> dict[Path, ContentType]:
