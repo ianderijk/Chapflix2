@@ -230,7 +230,7 @@ def _tables_exist() -> bool:
         "select table_name from information_schema.tables where table_schema = 'public';"
     )
     tables = [x[0] for x in tables_data]
-    return all(x in tables for x in TABLES)
+    return all(x in TABLES for x in tables)
 
 
 def _build_tables() -> None:

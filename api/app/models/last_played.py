@@ -1,12 +1,11 @@
-from typing import Optional
 from pydantic import BaseModel
 
 
 class LastPlayed(BaseModel):
     media_type: str
     file_key: int
-    film: Optional[str]
-    show: Optional[str]
-    season: Optional[int]
-    episode: Optional[int]
+    film: str | None
+    show: str | None
+    season: int | None
+    episode: int | None
     file: str

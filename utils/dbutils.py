@@ -39,20 +39,22 @@ TABLES = {
 }
 
 
-def execute_statement(statement: str, engine: Engine = get_engine()) -> None:
+def execute_statement(
+    statement: str, params: Mapping[str, Any] = {}, engine: Engine = get_engine()
+) -> None:
     """Function to allow execution of statements that do not return any results
     such as create and insert"""
     with engine.connect() as conn:
-        conn.execute(text(statement))
+        conn.execute(text(statement), params)
         conn.commit()
 
 
 def execute_query(
-    query: str, params: Mapping[str, Any], engine: Engine = get_engine()
+    query: str, params: Mapping[str, Any] = {}, engine: Engine = get_engine()
 ) -> Sequence[Row[Any]]:
-    """Funciton to allow execution of queries that return results"""
+    """Function to allow execution of queries that return results"""
     with engine.connect() as conn:
-        data = conn.execute(text(query), params or {})
+        data = conn.execute(text(query), params)
         return data.fetchall()
 
 

@@ -1,9 +1,8 @@
-from typing import Optional
 from pydantic import BaseModel
 
 
 class AutoPlay(BaseModel):
     file: str
-    show: Optional[str]
-    season: Optional[int]
-    episode: Optional[int]
+    show: str | None
+    season: int | None
+    episode: int | None

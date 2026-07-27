@@ -1,6 +1,6 @@
 [project]
 name = "chaplifx2"
-version = "1.0.2"
+version = "2.0.0"
 description = "A simple media app for shows and films"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -11,6 +11,7 @@ dependencies = [
     "psycopg2-binary>=2.9.10",
     "pydantic>=2.12.5",
     "python-dotenv>=1.1.1",
+    "requests>=2.32.5",
     "sqlalchemy>=2.0.42",
     "uvicorn>=0.49.0",
 ]
