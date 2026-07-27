@@ -45,6 +45,12 @@ async def get_films() -> dict[str, Any]:
     return films.model_dump()
 
 
+@app.get("/film/{film}")
+async def get_film(film: str) -> dict[str, Any]:
+    selection = service.get_film(film)
+    return selection.model_dump()
+
+
 @app.get("/shows")
 async def get_shows() -> dict[str, Any]:
     shows = service.get_shows()
@@ -61,3 +67,9 @@ async def get_seasons(show: str) -> dict[str, Any]:
 async def get_episodes(show: str, season: int) -> dict[str, Any]:
     episodes = service.get_episodes(show, season)
     return episodes.model_dump()
+
+
+@app.get("/{show}/{season}/{episode}")
+async def get_episode(show: str, season: int, episode: int) -> dict[str, Any]:
+    selection = service.get_episode(show, season, episode)
+    return selection.model_dump()

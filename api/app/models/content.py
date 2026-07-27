@@ -15,3 +15,15 @@ class Seasons(BaseModel):
 
 class Episodes(BaseModel):
     episodes: list[int]
+
+
+class Film(BaseModel):
+    name: str
+    file: str
+
+
+class Episode(BaseModel):
+    show: str
+    season: int
+    episode: int
+    file: str

@@ -3,7 +3,7 @@ from utils.dbutils import execute_query
 from api.app.models.user import User
 from api.app.models.last_played import LastPlayed
 from api.app.models.auto_play import AutoPlay
-from api.app.models.content import Films, Shows, Seasons, Episodes
+from api.app.models.content import Films, Shows, Seasons, Episodes, Film, Episode
 
 
 def get_user(username: str) -> User:
@@ -70,6 +70,15 @@ def get_films() -> Films:
     return films
 
 
+def get_film(film: str) -> Film:
+    query = "select f.film, c.file from films f left join content c on f.file_key = c.file_key where f.film= :film;"
+    params = {"film": film}
+    data = execute_query(query, params)
+    values = data[0]
+    selection = Film(name=values[0], file=values[1])
+    return selection
+
+
 def get_shows() -> Shows:
     query = "select distinct show from shows;"
     data = execute_query(query)
@@ -94,3 +103,25 @@ def get_episodes(show: str, season: int) -> Episodes:
     values = sorted([x[0] for x in data])
     episodes = Episodes(episodes=values)
     return episodes
+
+
+def get_episode(show: str, season: int, episode: int) -> Episode:
+    query = """
+        select s.show, s.season, s.episode, c.file
+        from shows s
+        left join content c on s.file_key = c.file_key
+        where s.show = :show
+            and s.season = :season
+            and s.episode = :episode
+        ;
+        """
+    params = {"show": show, "season": season, "episode": episode}
+    data = execute_query(query, params)
+    values = data[0]
+    selection = Episode(
+        show=values[0],
+        season=values[1],
+        episode=values[2],
+        file=values[3],
+    )
+    return selection
