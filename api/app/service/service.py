@@ -1,8 +1,8 @@
 from fastapi import HTTPException
 from utils.dbutils import execute_query
 from api.app.models.user import User
-from api.app.models.selections import LastPlayed, AutoPlay
-from api.app.models.content import Films, Shows, Seasons, Episodes, Film, Episode
+from api.app.models.selections import LastPlayed, AutoPlay, Film, Episode
+from api.app.models.content import Films, Shows, Seasons, Episodes
 
 
 def get_user(username: str) -> User:

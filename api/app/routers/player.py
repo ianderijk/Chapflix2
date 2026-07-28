@@ -1,6 +1,9 @@
 from fastapi import FastAPI, Depends, HTTPException
 from typing import Any
+from datetime import datetime
+from utils.dbutils import execute_statement
 from api.app.models.user import User
+from api.app.models.events import Watched, Paused
 import api.app.service.service as service
 
 
@@ -75,23 +78,32 @@ async def get_episode(show: str, season: int, episode: int) -> dict[str, Any]:
     return selection.model_dump()
 
 
-# @app.post("/record-play")
-# async def record_play(body: Watched):
-#     ######################################################################
-#     # This endpoint isn't written yet. Any time this endpoint will get called
-#     # I need to figure out which endpoints will have provided the data that's
-#     # being sent to this endpoint. That get endpoint payload will have to include
-#     # the file key. I've updated the get_next_episode function so that now
-#     # returns the file key (update made in the database). Just need to figure
-#     # out what other sql functions will need updating and do them before
-#     # this endpoint can be implemented properly.
-#     ######################################################################
-#     play_time = datetime.now()
-#     value_to_insert = body.value
-#     statement = "insert into users (user_id, display_name) values (:id_, 'test')"
-#     params = {"id_": value_to_insert}
-#     try:
-#         execute_statement(statement, params)
-#     except Exception:
-#         return {"status_code": 500, "detail": "Failed to insert into database"}
-#     return {"status_code": 200, "detail": f"inserted {value_to_insert}"}
+@app.post("/record-play")
+async def record_play(body: Watched):
+    play_time = datetime.now()
+    statement = "insert into history (file_key, time, user_id) values (:file_key, :time, :user_id);"
+    params = {"file_key": body.file_key, "time": play_time, "user_id": body.user_id}
+    execute_statement(statement, params)
+    return {"status_code": 200, "detail": f"Recorded play - file key: {body.file_key}"}
+
+
+@app.post("/record-paused")
+async def paused_play(body: Paused):
+    statement = (
+        "insert into paused_content (play_num, user_id, video_progress)"
+        "values (:play_num, :user_id, :video_progress);"
+    )
+    params = {
+        "play_num": body.play_num,
+        "user_id": body.user_id,
+        "video_progress": body.video_progress,
+    }
+    execute_statement(statement, params)
+    return {"status_code": 200, "detail": "Recorded paused"}
+
+
+# TODO:
+# Add record paused endpoint
+# Add endpoint to find timestamp for continuing paused content
+# Will need to write more code to replicate some of the existing player module
+#   functionality such as string formatting and path formatting
