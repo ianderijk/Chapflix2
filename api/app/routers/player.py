@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException
 from typing import Any
-import api.app.service.service as service
 from api.app.models.user import User
+import api.app.service.service as service
 
 
 app = FastAPI()
@@ -73,3 +73,25 @@ async def get_episodes(show: str, season: int) -> dict[str, Any]:
 async def get_episode(show: str, season: int, episode: int) -> dict[str, Any]:
     selection = service.get_episode(show, season, episode)
     return selection.model_dump()
+
+
+# @app.post("/record-play")
+# async def record_play(body: Watched):
+#     ######################################################################
+#     # This endpoint isn't written yet. Any time this endpoint will get called
+#     # I need to figure out which endpoints will have provided the data that's
+#     # being sent to this endpoint. That get endpoint payload will have to include
+#     # the file key. I've updated the get_next_episode function so that now
+#     # returns the file key (update made in the database). Just need to figure
+#     # out what other sql functions will need updating and do them before
+#     # this endpoint can be implemented properly.
+#     ######################################################################
+#     play_time = datetime.now()
+#     value_to_insert = body.value
+#     statement = "insert into users (user_id, display_name) values (:id_, 'test')"
+#     params = {"id_": value_to_insert}
+#     try:
+#         execute_statement(statement, params)
+#     except Exception:
+#         return {"status_code": 500, "detail": "Failed to insert into database"}
+#     return {"status_code": 200, "detail": f"inserted {value_to_insert}"}

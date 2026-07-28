@@ -2,7 +2,8 @@ create or replace function get_film_path(film text)
 returns table(
 file text,
 plays integer,
-last_played timestamp
+last_played timestamp,
+file_key integer
 )
 as
 $$
@@ -16,6 +17,7 @@ with last_played as (
 select c.file
 	,lp.plays
 	,lp.last_played
+	,c.file_key
 from films f
 left join content c on f.file_key = c.file_key
 left join last_played lp on f.file_key = lp.file_key

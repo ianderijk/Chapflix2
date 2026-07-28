@@ -1,8 +1,7 @@
 from fastapi import HTTPException
 from utils.dbutils import execute_query
 from api.app.models.user import User
-from api.app.models.last_played import LastPlayed
-from api.app.models.auto_play import AutoPlay
+from api.app.models.selections import LastPlayed, AutoPlay
 from api.app.models.content import Films, Shows, Seasons, Episodes, Film, Episode
 
 
@@ -44,6 +43,7 @@ def get_next_episode(user: User) -> AutoPlay:
         show=values[1],
         season=values[2],
         episode=values[3],
+        file_key=values[4],
     )
     return next_episode
 
@@ -58,6 +58,7 @@ def get_previous_episode(user: User) -> AutoPlay:
         show=values[1],
         season=values[2],
         episode=values[3],
+        file_key=values[4],
     )
     return previous_episode
 
@@ -71,11 +72,17 @@ def get_films() -> Films:
 
 
 def get_film(film: str) -> Film:
-    query = "select f.film, c.file from films f left join content c on f.file_key = c.file_key where f.film= :film;"
+    query = "select * from get_film_path(:film);"
     params = {"film": film}
     data = execute_query(query, params)
     values = data[0]
-    selection = Film(name=values[0], file=values[1])
+    selection = Film(
+        name=film,
+        file=values[0],
+        file_key=values[3],
+        plays=values[1],
+        last_played=values[2],
+    )
     return selection
 
 
@@ -106,22 +113,17 @@ def get_episodes(show: str, season: int) -> Episodes:
 
 
 def get_episode(show: str, season: int, episode: int) -> Episode:
-    query = """
-        select s.show, s.season, s.episode, c.file
-        from shows s
-        left join content c on s.file_key = c.file_key
-        where s.show = :show
-            and s.season = :season
-            and s.episode = :episode
-        ;
-        """
+    query = "select * from get_show_path(:show, :season, :episode);"
     params = {"show": show, "season": season, "episode": episode}
     data = execute_query(query, params)
     values = data[0]
     selection = Episode(
-        show=values[0],
-        season=values[1],
-        episode=values[2],
-        file=values[3],
+        show=show,
+        season=season,
+        episode=episode,
+        file=values[0],
+        file_key=values[3],
+        plays=values[1],
+        last_played=values[2],
     )
     return selection

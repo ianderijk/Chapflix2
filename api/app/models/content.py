@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from datetime import datetime
 
 
 class Films(BaseModel):
@@ -20,6 +21,9 @@ class Episodes(BaseModel):
 class Film(BaseModel):
     name: str
     file: str
+    file_key: int
+    plays: int | None
+    last_played: datetime | None
 
 
 class Episode(BaseModel):
@@ -27,3 +31,6 @@ class Episode(BaseModel):
     season: int
     episode: int
     file: str
+    file_key: int
+    plays: int | None
+    last_played: datetime | None
