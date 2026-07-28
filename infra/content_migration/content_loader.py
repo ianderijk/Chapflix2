@@ -108,6 +108,10 @@ class Migration:
     def format_remaining_time(self, seconds: float) -> str:
         minutes = int(seconds // 60)
         seconds_ = int(seconds % 60)
+        if minutes < 10:
+            minutes = f"0{minutes}"
+        if seconds_ < 10:
+            seconds_ = f"0{seconds}"
         return f"{minutes}:{seconds_}"
 
     def migrate_files(self) -> None:

@@ -1,3 +1,4 @@
+from contextvars import ContextVar
 from dash import dcc, html, State
 from dash_extensions import EventListener
 from dash.dependencies import Input, Output
@@ -14,6 +15,8 @@ from app.src.logger import (
 )
 
 player = Player()
+BASE_URL = "http://127.0.0.1:8000/"
+user = ContextVar("user", default=None)
 
 
 def default_event_listener(file: Path | str | None) -> EventListener | None:
@@ -228,6 +231,10 @@ def autoplay_next_episode(
     Input(component_id="users", component_property="value"),
 )
 def set_user(user: str) -> str:
+    # url = f"{BASE_URL}/user/{user}"
+    # response = requests.get(url)
+    # data = json.loads(response.text)
+
     if user:
         player.user = user
         log_user_selection(player)

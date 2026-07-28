@@ -1,41 +1,10 @@
-/**
- * Function: get_next_episode()
- * 
- * Description:
- *   Retrieves the next episode to play based on the user's last played episode.
- *   Handles both continuation within the same season and progression to the next season.
- *
- * Returns:
- *   Table with columns:
- *   - file (text): File path of the next episode
- *   - show (text): Name of the show
- *   - season (integer): Season number
- *   - episode (integer): Episode number
- *
- * Logic:
- *   1. Fetches the user's last played episode via get_last_played()
- *   2. Determines the maximum episode in the current season
- *   3. If the last played episode is not the season finale:
- *      - Returns the next episode in the same season
- *   4. If the last played episode is the season finale and a next season exists:
- *      - Returns the first episode of the next season
- *   5. Otherwise returns null values
- *
- * Dependencies:
- *   - get_last_played() function
- *   - shows table
- *   - content table
- *
- * Author: [Author Name]
- * Created: [Date]
- * Last Modified: [Date]
- */
 create or replace function get_next_episode(usr_id integer)
 returns table (
 file text,
 show text,
 season integer,
-episode integer
+episode integer,
+file_key integer
 )
 as
 $$
@@ -91,6 +60,9 @@ select case when lpvs.episode != lpvs.max_episode then ss.file
 		,case when lpvs.episode != lpvs.max_episode then ss.episode
 			when ns.show is not null then ns.episode
 			else null end as next_episode
+        ,case when lpvs.episode != lpvs.max_episode then c.file_key
+            when ns.show is not null then c.file_key
+            else null end as file_key
 from last_played_versus_season as lpvs
 left join same_season as ss on lpvs.show = ss.show
 left join next_season as ns on lpvs.show = ns.show

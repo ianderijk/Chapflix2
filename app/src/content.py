@@ -43,26 +43,29 @@ class FileKey:
         return cur_val
 
 
-Content = NamedTuple(
-    "Content", [("type_", ContentType), ("filepath", Path), ("loaded", bool)]
-)
+class Content(NamedTuple):
+    type_: ContentType
+    filepath: Path
+    loaded: bool
 
-Episode = NamedTuple(
-    "Episode",
-    [
-        ("show", str),
-        ("season", int),
-        ("episode", int),
-        ("file_key", int),
-        ("filepath", Path),
-    ],
-)
 
-Film = NamedTuple("Film", [("film", str), ("file_key", int), ("filepath", Path)])
+class Episode(NamedTuple):
+    show: str
+    season: int
+    episode: int
+    file_key: int
+    filepath: Path
 
-PreparedContents = NamedTuple(
-    "PreparedContents", [("shows", list[Episode]), ("films", list[Film])]
-)
+
+class Film(NamedTuple):
+    film: str
+    file_key: int
+    filepath: Path
+
+
+class PreparedContents(NamedTuple):
+    shows: list[Episode]
+    films: list[Film]
 
 
 def _strip_path(path: Path) -> Path:
@@ -89,7 +92,7 @@ def _get_loaded_content() -> list[Path]:
     Returns:
         - records: `["ShowName/S1E2.mp4", "FilmName/FilmName.mp4]`
     """
-    loaded_content_data = execute_query("select file from content;")
+    loaded_content_data = execute_query("select file from public.content;")
     records = []
     for record in loaded_content_data:
         path = Path(record[0])
@@ -227,7 +230,7 @@ def _tables_exist() -> bool:
         "select table_name from information_schema.tables where table_schema = 'public';"
     )
     tables = [x[0] for x in tables_data]
-    return all(x in tables for x in TABLES.keys())
+    return all(x in TABLES for x in tables)
 
 
 def _build_tables() -> None:
@@ -241,7 +244,7 @@ def _build_functions() -> None:
         / "postgres"
         / "reset_functions.sh"
     )
-    subprocess.run(["bash", shell_path])
+    subprocess.run(["bash", shell_path], check=False)
 
 
 def _insert_users() -> None:
@@ -258,6 +261,9 @@ def _insert_dummy_history_records() -> None:
 
 
 def build_db() -> None:
+    # TODO: The fact that users are being written mutiple times suggests
+    # that this function is being called when it shouldn't be. Figure out
+    # why and fix it.
     _build_tables()
     _build_functions()
     _insert_users()
