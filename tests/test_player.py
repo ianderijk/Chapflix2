@@ -1,8 +1,8 @@
 import pytest  # noqa: F401
 from pathlib import Path
 from unittest.mock import patch
-import app.src.player as player
-from app.src.player import (
+import app.src.r_player as r_player
+from app.src.r_player import (
     AutoPlayed,
     LastPlayed,
     User,
@@ -52,7 +52,7 @@ def test_get_user(setup_test_db):
 
 
 def test_get_file_key():
-    with patch.object(player, "FILE_KEYS", {Path("path/to/file"): 1}):
+    with patch.object(r_player, "FILE_KEYS", {Path("path/to/file"): 1}):
         result = get_file_key(Path("path/to/file"))
     expected = 1
     assert result == expected

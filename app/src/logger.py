@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime
-from app.src.player import Player
+from app.src.r_player import Player
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(filename="chapflix.log", level=logging.INFO)

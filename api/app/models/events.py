@@ -10,7 +10,11 @@ class Watched(BaseModel):
     file_key: int
 
 
-class Paused(BaseModel):
+class PausedPlay(BaseModel):
     play_num: int
     user_id: int
     video_progress: float
+
+
+class ResumePaused(BaseModel):
+    seconds: float

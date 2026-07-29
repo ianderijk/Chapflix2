@@ -3,7 +3,7 @@ from typing import Any
 from datetime import datetime
 from utils.dbutils import execute_statement
 from api.app.models.user import User
-from api.app.models.events import Watched, Paused
+from api.app.models.events import Watched, PausedPlay
 import api.app.service.service as service
 
 
@@ -78,6 +78,12 @@ async def get_episode(show: str, season: int, episode: int) -> dict[str, Any]:
     return selection.model_dump()
 
 
+@app.get("/get-paused/{user}")
+async def get_paused(user: int) -> dict[str, Any]:
+    seconds = service.get_paused_time(user)
+    return seconds.model_dump()
+
+
 @app.post("/record-play")
 async def record_play(body: Watched):
     play_time = datetime.now()
@@ -88,7 +94,7 @@ async def record_play(body: Watched):
 
 
 @app.post("/record-paused")
-async def paused_play(body: Paused):
+async def paused_play(body: PausedPlay):
     statement = (
         "insert into paused_content (play_num, user_id, video_progress)"
         "values (:play_num, :user_id, :video_progress);"

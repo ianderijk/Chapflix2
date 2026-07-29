@@ -1,22 +1,114 @@
-from contextvars import ContextVar
 from dash import dcc, html, State
 from dash_extensions import EventListener
 from dash.dependencies import Input, Output
 from flask import send_from_directory
-from typing import cast
-import dash
+from typing import cast, Literal, Any
 from pathlib import Path
-from app.src.player import Player
+import dash
+import requests
+import json
+from app.src.player import drop_down_lists, get_file, get_display_string
+from app.src.r_player import Player
 from app.src.logger import (
     log_app_starting,
-    log_user_selection,
     log_file_played,
     log_file_paused,
 )
 
 player = Player()
-BASE_URL = "http://127.0.0.1:8000/"
-user = ContextVar("user", default=None)
+
+
+def get_endpoint_url(endpoint: str) -> str:
+    return "http://127.0.0.1:8000/" + endpoint
+
+
+def get_user_id(user: str) -> int:
+    url = get_endpoint_url(f"user/{user}")
+    response = requests.get(url)
+    if response.status_code != 200:
+        raise Exception(f"API fucked up getting id for user: {user}")
+    data = json.loads(response.text)
+    return data["id_"]
+
+
+def record_watched(data: dict):
+    url = get_endpoint_url("record-play")
+    response = requests.post(url=url, data=data)
+    if response.status_code != 200:
+        raise Exception(f"API fucked up recording {data}")
+    return response
+
+
+def get_playable_content(
+    content_type: Literal["shows", "films"],
+) -> list[dict[str, str]]:
+    url = get_endpoint_url(content_type)
+    response = requests.get(url)
+    if response.status_code != 200:
+        raise Exception("API fucked up getting shows")
+    data = json.loads(response.text)
+    options = data[content_type]
+    return drop_down_lists(options)
+
+
+def get_season_options(show: str) -> list[int]:
+    url = get_endpoint_url(f"{show}/seasons")
+    response = requests.get(url)
+    if response.status_code != 200:
+        raise Exception(f"API fucked up getting seasons for {show}")
+    data = json.loads(response.text)
+    options = data["seasons"]
+    return options
+
+
+def get_episode_options(show: str, season: int) -> list[int]:
+    url = get_endpoint_url(f"{show}/{season}")
+    response = requests.get(url)
+    if response.status_code != 200:
+        raise Exception(f"API fucked up getting episodes for {show}, {season}")
+    data = json.loads(response.text)
+    options = data["episodes"]
+    return options
+
+
+def get_episode_selection_data(show: str, season: int, episode: int) -> dict[str, Any]:
+    url = get_endpoint_url(f"{show}/{season}/{episode}")
+    response = requests.get(url)
+    if response.status_code != 200:
+        raise Exception(f"API fucked up getting {show}/{season}/{episode}")
+    data = json.loads(response.text)
+    return data
+
+
+def get_film(film: str) -> dict[str, Any]:
+    url = get_endpoint_url(f"film/{film}")
+    response = requests.get(url)
+    if response.status_code != 200:
+        raise Exception(f"API fucked up getting {film}")
+    data = json.loads(response.text)
+    return data
+
+
+def get_next_episode_selection(user: str) -> dict[str, Any]:
+    url = get_endpoint_url(f"{user}/next-episode")
+    response = requests.get(url)
+    if response.status_code != 200:
+        raise Exception(f"API fucked up getting next episode for user {user}")
+    data = json.loads(response.text)
+    return data
+
+
+def get_last_played_selection(user: str) -> dict[str, Any]:
+    url = get_endpoint_url(f"{user}/get-last-played")
+    response = requests.get(url)
+    if response.status_code != 200:
+        raise Exception(f"API fucked up getting last played for user: {user}")
+    data = json.loads(response.text)
+    return data
+
+
+# def get_continue_watching_from(user: str) -> float:
+#     url = get_endpoint_url("")
 
 
 def default_event_listener(file: Path | str | None) -> EventListener | None:
@@ -129,13 +221,13 @@ def build_user_controls() -> html.Div:
     )
 
 
-def build_film_picker(player: "Player") -> html.Div:
+def build_film_picker() -> html.Div:
     return html.Div(
         children=[
             html.H5("Films"),
             dcc.Dropdown(
                 id=ID_FILM_PICKER,
-                options=cast(list, player.playable_films),
+                options=cast(list, get_playable_content("films")),
                 placeholder="Pick a film",
                 value="Pick a film",
                 searchable=False,
@@ -144,13 +236,13 @@ def build_film_picker(player: "Player") -> html.Div:
     )
 
 
-def build_show_picker(player: "Player") -> html.Div:
+def build_show_picker() -> html.Div:
     return html.Div(
         children=[
             html.H5("TV Shows"),
             dcc.Dropdown(
                 id=ID_SHOW_PICKER,
-                options=cast(list, player.playable_shows),
+                options=cast(list, get_playable_content("shows")),
                 value="Pick a show",
                 placeholder="Pick a show",
                 searchable=False,
@@ -163,14 +255,14 @@ def build_show_picker(player: "Player") -> html.Div:
     )
 
 
-def build_top_controls(player: "Player") -> html.Div:
+def build_top_controls() -> html.Div:
     return html.Div(
         children=[
             html.Div(
                 children=[
                     build_user_controls(),
-                    build_film_picker(player),
-                    build_show_picker(player),
+                    build_film_picker(),
+                    build_show_picker(),
                 ],
                 style=COMMON_STYLE,
             )
@@ -191,11 +283,11 @@ def build_video_container() -> html.Div:
     )
 
 
-def build_layout(player: "Player") -> html.Div:
-    return html.Div(children=[build_top_controls(player), build_video_container()])
+def build_layout() -> html.Div:
+    return html.Div(children=[build_top_controls(), build_video_container()])
 
 
-app.layout = build_layout(player)
+app.layout = build_layout()
 
 
 @app.callback(
@@ -210,37 +302,33 @@ app.layout = build_layout(player)
         allow_duplicate=True,
     ),
     Input(component_id="VideoEvents", component_property="event"),
+    Input(component_id="users", component_property="value", allow_optional=False),
     prevent_initial_call=True,
 )
 def autoplay_next_episode(
     event: EventListener,
+    user: str,
 ) -> tuple[EventListener | dash.NoUpdate | None, str | dash.NoUpdate | None]:
     if event and event["type"] == "ended":
-        file, display_string = player.get_next_episode()
+        selection = get_next_episode_selection(user)
+        last_played = get_last_played_selection(user)
+        if last_played["media_type"] == "film":
+            return dash.no_update, dash.no_update
+        file = get_file(selection)
+        display_string = get_display_string(selection, "show")
         log_file_played(player, "auto_play_next_episode")
+        user_id = get_user_id(user)
+        watched = {
+            "film": None,
+            "show": selection["show"],
+            "season": selection["season"],
+            "episode": selection["episode"],
+            "user_id": user_id,
+            "file_key": selection["file_key"],
+        }
+        record_watched(watched)
         return default_event_listener(file), display_string
     return dash.no_update, dash.no_update
-
-
-@app.callback(
-    Output(
-        component_id="ContinueWatchingText",
-        component_property="children",
-        allow_duplicate=True,
-    ),
-    Input(component_id="users", component_property="value"),
-)
-def set_user(user: str) -> str:
-    # url = f"{BASE_URL}/user/{user}"
-    # response = requests.get(url)
-    # data = json.loads(response.text)
-
-    if user:
-        player.user = user
-        log_user_selection(player)
-        player.last_played = player.user
-        return player.get_last_played_string()
-    return ""
 
 
 @app.callback(
@@ -342,11 +430,20 @@ def play_film(film: str, user: str) -> tuple[None | EventListener, None | str]:
         return None, None
     elif film == "Pick a film":
         return None, None
-    if film and film != "Pick a film":
-        file, display_string = player.get_film_path(film=film)
-        log_file_played(player, "play_film")
-        return default_event_listener(file), display_string
-    return None, None
+    selection = get_film(film)
+    file = get_file(selection)
+    display_string = get_display_string(selection, "film")
+    user_id = get_user_id(user)
+    watched = {
+        "film": selection["film"],
+        "show": None,
+        "season": None,
+        "episode": None,
+        "user_id": user_id,
+        "file_key": selection["file_key"],
+    }
+    record_watched(watched)
+    return default_event_listener(file), display_string
 
 
 @app.callback(
@@ -356,10 +453,7 @@ def play_film(film: str, user: str) -> tuple[None | EventListener, None | str]:
 )
 def update_seasons(show: str) -> tuple:
     if show and show != "Pick a show":
-        return (
-            player.get_season_options(show),
-            None,
-        )
+        return get_season_options(show), None
     return [], None
 
 
@@ -371,7 +465,7 @@ def update_seasons(show: str) -> tuple:
 )
 def update_episodes(show: str, season: int) -> tuple:
     if show and season:
-        return player.get_episode_options(show, season), None
+        return get_episode_options(show, season), None
     return [], None
 
 
@@ -398,10 +492,20 @@ def play_episode(
         return None, None
     elif not show or show == "Pick a show" or not season or not episode:
         return None, None
-    file, display_string = player.get_show_path(
-        show=show, season=season, episode=episode
-    )
+    selection = get_episode_selection_data(show, season, episode)
+    file = get_file(selection)
+    display_string = get_display_string(selection, "show")
     log_file_played(player, "play_episode")
+    user_id = get_user_id(user)
+    watched = {
+        "film": None,
+        "show": selection["show"],
+        "season": selection["season"],
+        "episode": selection["episode"],
+        "user_id": user_id,
+        "file_key": selection["file_key"],
+    }
+    record_watched(watched)
     return default_event_listener(file), display_string
 
 

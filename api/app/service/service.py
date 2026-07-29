@@ -3,6 +3,7 @@ from utils.dbutils import execute_query
 from api.app.models.user import User
 from api.app.models.selections import LastPlayed, AutoPlay, Film, Episode
 from api.app.models.content import Films, Shows, Seasons, Episodes
+from api.app.models.events import ResumePaused
 
 
 def get_user(username: str) -> User:
@@ -127,3 +128,11 @@ def get_episode(show: str, season: int, episode: int) -> Episode:
         last_played=values[2],
     )
     return selection
+
+
+def get_paused_time(user_id: int) -> ResumePaused:
+    query = "select video_progress from paused_content where user_id = :user_id order by play_num limit 1;"
+    params = {"user_id": user_id}
+    data = execute_query(query, params)
+    value = data[0][0]
+    return ResumePaused(seconds=value)
