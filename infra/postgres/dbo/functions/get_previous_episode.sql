@@ -32,6 +32,7 @@ with last_played as (
 		,s.season
 		,s.episode
 		,c.file
+	    ,c.file_key
 	from shows as s
 	left join content as c on s.file_key = c.file_key
 	where s.show = (select show from last_played)
@@ -60,7 +61,9 @@ select case when lpvs.episode != lpvs.min_episode then ss.file
 		,case when lpvs.episode != lpvs.min_episode then ss.episode
 			when ps.show is not null then ps.episode
 			else null end as next_episode
-        ,c.file_key
+        ,case when lpvs.episode != lpvs.min_episode then ss.file_key
+            when ps.show is not null then c.file_key
+            else null end as file_key
 from last_played_versus_season as lpvs
 left join same_season as ss on lpvs.show = ss.show
 left join previous_season as ps on lpvs.show = ps.show

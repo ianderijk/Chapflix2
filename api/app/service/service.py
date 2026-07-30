@@ -132,8 +132,11 @@ def get_episode(show: str, season: int, episode: int) -> Episode:
 
 
 def get_paused_time(user_id: int) -> ResumePaused:
-    query = "select video_progress from paused_content where user_id = :user_id order by play_num limit 1;"
+    query = "select video_progress from paused_content where user_id = :user_id order by play_num desc limit 1;"
     params = {"user_id": user_id}
     data = execute_query(query, params)
-    value = data[0][0]
+    if not data:
+        value = 0.0
+    else:
+        value = data[0][0]
     return ResumePaused(seconds=value)

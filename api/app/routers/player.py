@@ -60,19 +60,19 @@ async def get_shows() -> dict[str, Any]:
     return shows.model_dump()
 
 
-@app.get("/{show}/seasons")
+@app.get("/show/{show}/seasons")
 async def get_seasons(show: str) -> dict[str, Any]:
     seasons = service.get_seasons(show)
     return seasons.model_dump()
 
 
-@app.get("/{show}/{season}")
+@app.get("/show/{show}/{season}")
 async def get_episodes(show: str, season: int) -> dict[str, Any]:
     episodes = service.get_episodes(show, season)
     return episodes.model_dump()
 
 
-@app.get("/{show}/{season}/{episode}")
+@app.get("/show/{show}/{season}/{episode}")
 async def get_episode(show: str, season: int, episode: int) -> dict[str, Any]:
     selection = service.get_episode(show, season, episode)
     return selection.model_dump()
@@ -97,7 +97,7 @@ async def record_play(body: Watched):
 async def paused_play(body: PausedPlay):
     statement = (
         "insert into paused_content (user_id, video_progress)"
-        "values (:play_num, :user_id, :video_progress);"
+        "values (:user_id, :video_progress);"
     )
     params = {
         "user_id": body.user_id,

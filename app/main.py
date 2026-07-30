@@ -23,7 +23,7 @@ def get_user_id(user: str) -> int:
 
 def record_watched(data: dict):
     url = get_endpoint_url("record-play")
-    response = requests.post(url=url, data=data)
+    response = requests.post(url=url, json=data)
     return response
 
 
@@ -38,7 +38,7 @@ def get_playable_content(
 
 
 def get_season_options(show: str) -> list[int]:
-    url = get_endpoint_url(f"{show}/seasons")
+    url = get_endpoint_url(f"show/{show}/seasons")
     response = requests.get(url)
     data = json.loads(response.text)
     options = data["seasons"]
@@ -46,7 +46,7 @@ def get_season_options(show: str) -> list[int]:
 
 
 def get_episode_options(show: str, season: int) -> list[int]:
-    url = get_endpoint_url(f"{show}/{season}")
+    url = get_endpoint_url(f"show/{show}/{season}")
     response = requests.get(url)
     data = json.loads(response.text)
     options = data["episodes"]
@@ -54,7 +54,7 @@ def get_episode_options(show: str, season: int) -> list[int]:
 
 
 def get_episode_selection_data(show: str, season: int, episode: int) -> dict[str, Any]:
-    url = get_endpoint_url(f"{show}/{season}/{episode}")
+    url = get_endpoint_url(f"show/{show}/{season}/{episode}")
     response = requests.get(url)
     data = json.loads(response.text)
     return data
@@ -91,7 +91,8 @@ def get_last_played_selection(user: str) -> dict[str, Any]:
 
 
 def get_continue_watching_from(user: str) -> float:
-    url = get_endpoint_url(f"get-paused/{user}")
+    user_id = get_user_id(user)
+    url = get_endpoint_url(f"get-paused/{user_id}")
     response = requests.get(url)
     data = json.loads(response.text)
     seconds = data["seconds"]
@@ -506,7 +507,7 @@ def write_paused_time(_, data: dict[str, float], user: str) -> None:
         seconds = data["target.currentTime"]
         data = {"user_id": user_id, "video_progress": seconds}
         url = get_endpoint_url("record-paused")
-        requests.post(url=url, data=data)
+        requests.post(url=url, json=data)
 
 
 if __name__ == "__main__":
