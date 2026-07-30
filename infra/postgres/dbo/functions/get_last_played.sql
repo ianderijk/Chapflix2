@@ -1,4 +1,3 @@
-
 create or replace function get_last_played(usr_id integer)
 returns table(
 media_type text,
@@ -7,7 +6,8 @@ film text,
 show text,
 season integer,
 episode integer,
-file text
+file text,
+last_played timestamp
 )
 as
 $$
@@ -18,6 +18,7 @@ select case when f.film is not null then 'film' else 'show' end as media_type
 	,s.season
 	,s.episode
 	,c.file
+	,h.time as last_played
 from history h
 left join shows s on h.file_key = s.file_key
 left join films f on h.file_key = f.file_key

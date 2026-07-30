@@ -96,20 +96,12 @@ async def record_play(body: Watched):
 @app.post("/record-paused")
 async def paused_play(body: PausedPlay):
     statement = (
-        "insert into paused_content (play_num, user_id, video_progress)"
+        "insert into paused_content (user_id, video_progress)"
         "values (:play_num, :user_id, :video_progress);"
     )
     params = {
-        "play_num": body.play_num,
         "user_id": body.user_id,
         "video_progress": body.video_progress,
     }
     execute_statement(statement, params)
     return {"status_code": 200, "detail": "Recorded paused"}
-
-
-# TODO:
-# Add record paused endpoint
-# Add endpoint to find timestamp for continuing paused content
-# Will need to write more code to replicate some of the existing player module
-#   functionality such as string formatting and path formatting

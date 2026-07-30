@@ -13,9 +13,10 @@ def _format_filepath(filepath: str) -> Path:
     return Path(filepath).relative_to(MEDIA_FILES)
 
 
-def _format_play_timestamp(timestamp: datetime | None) -> str:
+def _format_play_timestamp(timestamp: str | None) -> str:
     if timestamp:
-        return f"{timestamp.hour:02}:{timestamp.minute:02} {timestamp.day:02}-{timestamp.month:02}-{timestamp.year}"
+        dt = datetime.fromisoformat(timestamp)
+        return f"{dt.hour:02}:{dt.minute:02} {dt.day:02}-{dt.month:02}-{dt.year}"
     return "Never!"
 
 
@@ -38,6 +39,6 @@ def get_display_string(selection: dict, content_type: Literal["show", "film"]) -
     return display_string
 
 
-def get_file(payload: dict):
+def get_file(payload: dict) -> Path:
     file = payload["file"]
     return _format_filepath(file)

@@ -11,7 +11,6 @@ class Watched(BaseModel):
 
 
 class PausedPlay(BaseModel):
-    play_num: int
     user_id: int
     video_progress: float
 

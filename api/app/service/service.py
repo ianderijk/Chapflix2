@@ -30,6 +30,7 @@ def get_last_played(user: User) -> LastPlayed:
         season=values[4],
         episode=values[5],
         file=values[6],
+        last_played=values[7],
     )
     return last_played
 
@@ -78,7 +79,7 @@ def get_film(film: str) -> Film:
     data = execute_query(query, params)
     values = data[0]
     selection = Film(
-        name=film,
+        film=film,
         file=values[0],
         file_key=values[3],
         plays=values[1],
