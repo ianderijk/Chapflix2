@@ -112,9 +112,6 @@ def setup_test_db(postgres_container):
     import app.src.content as content
 
     importlib.reload(content)
-    import app.src.player as player
-
-    importlib.reload(player)
 
     yield {"url": url, "engine": engine}
 

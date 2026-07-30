@@ -24,13 +24,13 @@ class BaseEpisodeInfo(BaseModel):
     episode: int
 
 
-class AutoPlay(BaseMedia):
+class AutoPlay(BaseTrackedMedia):
     show: str | None = None
     season: int | None = None
     episode: int | None = None
 
 
-class LastPlayed(BaseMedia):
+class LastPlayed(BaseTrackedMedia):
     media_type: str
     film: str | None = None
     show: str | None = None
@@ -39,7 +39,7 @@ class LastPlayed(BaseMedia):
 
 
 class Film(BaseTrackedMedia):
-    name: str
+    film: str
 
 
 class Episode(BaseTrackedMedia, BaseEpisodeInfo):

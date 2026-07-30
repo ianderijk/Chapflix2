@@ -3,7 +3,7 @@ from typing import Any
 from datetime import datetime
 from utils.dbutils import execute_statement
 from api.app.models.user import User
-from api.app.models.events import Watched, Paused
+from api.app.models.events import Watched, PausedPlay
 import api.app.service.service as service
 
 
@@ -60,22 +60,28 @@ async def get_shows() -> dict[str, Any]:
     return shows.model_dump()
 
 
-@app.get("/{show}/seasons")
+@app.get("/show/{show}/seasons")
 async def get_seasons(show: str) -> dict[str, Any]:
     seasons = service.get_seasons(show)
     return seasons.model_dump()
 
 
-@app.get("/{show}/{season}")
+@app.get("/show/{show}/{season}")
 async def get_episodes(show: str, season: int) -> dict[str, Any]:
     episodes = service.get_episodes(show, season)
     return episodes.model_dump()
 
 
-@app.get("/{show}/{season}/{episode}")
+@app.get("/show/{show}/{season}/{episode}")
 async def get_episode(show: str, season: int, episode: int) -> dict[str, Any]:
     selection = service.get_episode(show, season, episode)
     return selection.model_dump()
+
+
+@app.get("/get-paused/{user}")
+async def get_paused(user: int) -> dict[str, Any]:
+    seconds = service.get_paused_time(user)
+    return seconds.model_dump()
 
 
 @app.post("/record-play")
@@ -88,22 +94,14 @@ async def record_play(body: Watched):
 
 
 @app.post("/record-paused")
-async def paused_play(body: Paused):
+async def paused_play(body: PausedPlay):
     statement = (
-        "insert into paused_content (play_num, user_id, video_progress)"
-        "values (:play_num, :user_id, :video_progress);"
+        "insert into paused_content (user_id, video_progress)"
+        "values (:user_id, :video_progress);"
     )
     params = {
-        "play_num": body.play_num,
         "user_id": body.user_id,
         "video_progress": body.video_progress,
     }
     execute_statement(statement, params)
     return {"status_code": 200, "detail": "Recorded paused"}
-
-
-# TODO:
-# Add record paused endpoint
-# Add endpoint to find timestamp for continuing paused content
-# Will need to write more code to replicate some of the existing player module
-#   functionality such as string formatting and path formatting
