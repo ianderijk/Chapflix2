@@ -1,4 +1,4 @@
-from app.src.dbutils import (
+from utils.dbutils import (
     execute_statement,
     execute_query,
 )

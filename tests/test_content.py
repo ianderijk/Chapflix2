@@ -1,8 +1,8 @@
 import pytest
 from pathlib import Path
 from unittest.mock import patch
-import app.src.content as content
-from app.src.content import (
+import infra.content.content_load as content
+from infra.content.content_load import (
     FileKey,
     Content,
     ContentType,
