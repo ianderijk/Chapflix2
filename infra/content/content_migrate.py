@@ -146,7 +146,7 @@ class Migration:
             (
                 "cd /media/ianderijk/Backup/Chapflix2/ &&"
                 "source .venv/bin/activate &&"
-                "python3 -m app.src.db_load"
+                "python3 -m infra.content.db_load"
             ),
         ]
         subprocess.run(command)

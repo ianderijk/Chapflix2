@@ -148,7 +148,6 @@ def serve_content(filename: Path):
     return send_from_directory(VIDEO_DIR, filename)
 
 
-# Styles
 COMMON_STYLE = {
     "width": "100%",
     "display": "inline-block",
@@ -473,9 +472,7 @@ def update_episodes(show: str, season: int) -> tuple:
 def play_episode(
     show: str, season: int, episode: int, user: str
 ) -> tuple[None | EventListener, None | str]:
-    if not user:
-        return None, None
-    elif not show or show == "Pick a show" or not season or not episode:
+    if not user or not show or show == "Pick a show" or not season or not episode:
         return None, None
     selection = get_episode_selection_data(show, season, episode)
     file = get_file(selection)

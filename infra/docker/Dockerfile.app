@@ -4,20 +4,21 @@ FROM python:3.11-slim
 WORKDIR /app
 
 # Install system dependencies
-RUN pip install uv
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # Copy dependency definitions
 COPY pyproject.toml .
 
 # Install dependencies
-RUN uv sync
+RUN uv pip install --system -r pyproject.toml
 
 # Copy source code
 COPY app/ ./app
+COPY utils ./utils
 COPY assets/ ./assets
 
 # Expose dash port
 EXPOSE 8042
 
-# Run app
+# Activate venv & run app
 CMD ["uv", "run", "-m", "app.main"]

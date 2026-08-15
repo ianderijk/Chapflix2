@@ -5,7 +5,7 @@ from datetime import datetime
 from pathlib import Path
 from enum import Enum
 from typing import NamedTuple
-from app.src.dbutils import (
+from utils.dbutils import (
     execute_query,
     execute_statement,
     execute_bulk_insert,
@@ -271,8 +271,10 @@ def build_db() -> None:
 
 
 def load_db() -> None:
-    if not _tables_exist():
-        build_db()
+    # if not _tables_exist():
+    #     build_db()
+    _insert_users()
+    _insert_dummy_history_records()
     contents = walk_content(MEDIA_FILES)
     prepared = prepare_contents(contents)
     if prepared.shows:

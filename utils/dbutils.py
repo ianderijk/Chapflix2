@@ -1,7 +1,7 @@
 from typing import Any, Sequence, Mapping
 from dotenv import load_dotenv
 from sqlalchemy import MetaData, Table, Engine, Row, create_engine, text, insert
-from os import getenv
+import os
 
 load_dotenv()
 
@@ -16,7 +16,7 @@ _engine = None
 
 
 def _create_engine() -> Engine:
-    url = getenv("DATABASE_URL")
+    url = os.getenv("DATABASE_URL")
     if url:
         return create_engine(str(url))
     raise MissingEnvironmentError("DATABASE_URL is not defined in .env file")

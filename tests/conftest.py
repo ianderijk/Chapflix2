@@ -13,7 +13,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
 with patch("app.src.dbutils.execute_query", return_value=[]):
-    import app.src.content  # noqa: F401
+    import infra.content.content_load  # noqa: F401
 
 
 def _read_sql_file(path: Path) -> str:
@@ -106,10 +106,10 @@ def setup_test_db(postgres_container):
 
     os.environ["DATABASE_URL"] = url
 
-    import app.src.dbutils as dbutils
+    import utils.dbutils as dbutils
 
     importlib.reload(dbutils)
-    import app.src.content as content
+    import infra.content.content_load as content
 
     importlib.reload(content)
 
