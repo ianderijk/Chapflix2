@@ -1,6 +1,6 @@
 create or replace procedure create_schema_tables()
 language plpgsql
-as 
+as
 $$
 begin
 	create table if not exists content (
@@ -36,7 +36,7 @@ begin
 	);
 
 	create table if not exists paused_content (
-		play_num integer,
+		play_num serial,
 		user_id integer,
 		video_progress decimal
 	);
