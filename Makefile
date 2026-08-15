@@ -1,4 +1,4 @@
-.PHONY: api
+.PHONY: api app
 
 format:
 	uv run ruff format .
@@ -12,7 +12,10 @@ typecheck:
 check: format lint typecheck
 
 api:
-	uvicorn api.app.routers.player:app --reload
+	uvicorn api.app.main:app --reload
+
+app:
+	uv run -m app.main
 
 test:
 	uv run pytest

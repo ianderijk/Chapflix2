@@ -1,0 +1,21 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+RUN pip install uv
+
+# Copy dependency definition
+COPY pyproject.toml .
+
+# Install dependencies
+RUN uv pip install --system -r pyproject.toml
+
+# Copy API modules and shared utilities
+COPY api/app ./api/app
+COPY utils/ ./utils
+
+# Expose API port
+EXPOSE 8043
+
+# Run FastAPI via Uvicorn
+CMD ["python", "-m", "uvicorn", "api.app.main:app", "--host", "0.0.0.0", "--port", "8043"]

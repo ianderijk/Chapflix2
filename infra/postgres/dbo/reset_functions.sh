@@ -1,5 +1,5 @@
 DB_NAME="chapflix"
-DB_USER="buildusr"
+DB_USER="postgres"
 
 psql -U "$DB_USER" -d "$DB_NAME" -h 127.0.0.1 -f /media/idr/ExtDrive/Chapflix2/dbo/drop_functions.sql
 
