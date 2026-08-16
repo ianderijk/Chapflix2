@@ -4,13 +4,13 @@ FROM python:3.11-slim
 WORKDIR /app
 
 # Install system dependencies
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+RUN pip install uv
 
 # Copy dependency definitions
 COPY pyproject.toml .
 
 # Install dependencies
-RUN uv pip install --system -r pyproject.toml
+RUN uv sync
 
 # Copy source code
 COPY app/ ./app

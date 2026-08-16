@@ -11,7 +11,7 @@ from app.src.player import drop_down_lists, get_file, get_display_string
 
 
 def get_endpoint_url(endpoint: str) -> str:
-    return "http://127.0.0.1:8000/" + endpoint
+    return "http://192.168.0.29:8043/" + endpoint
 
 
 def get_user_id(user: str) -> int:
