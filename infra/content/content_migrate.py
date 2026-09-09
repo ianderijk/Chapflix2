@@ -137,38 +137,6 @@ class Migration:
             remaining_time = self.format_remaining_time(remaining_seconds)
             print(f"ETA: {remaining_time}")
 
-    def add_files_to_database(self) -> None:
-        command = [
-            "ssh",
-            "-i",
-            KEY_PATH,
-            TARGET_ADDRESS,
-            (
-                "cd /media/ianderijk/Backup/Chapflix2/ &&"
-                "source .venv/bin/activate &&"
-                "python3 -m infra.content.db_load"
-            ),
-        ]
-        subprocess.run(command)
-        restart_system = [
-            "ssh",
-            "-i",
-            KEY_PATH,
-            TARGET_ADDRESS,
-            "sudo systemctl restart chapflix.service",
-        ]
-        subprocess.run(restart_system)
-
     def main(self) -> None:
         self.create_missing_folders()
         self.migrate_files()
-        self.add_files_to_database()
-
-
-def main() -> None:
-    migration = Migration()
-    migration.main()
-
-
-if __name__ == "__main__":
-    main()
