@@ -1,4 +1,4 @@
-.PHONY: api app
+.PHONY: api app content
 
 format:
 	uv run ruff format .
@@ -16,6 +16,9 @@ api:
 
 app:
 	uv run -m app.main
+
+content:
+	uv run -m infra.content.cli
 
 test:
 	uv run pytest

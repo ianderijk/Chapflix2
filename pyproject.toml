@@ -13,6 +13,7 @@ dependencies = [
     "python-dotenv>=1.1.1",
     "requests>=2.32.5",
     "sqlalchemy>=2.0.42",
+    "typer>=0.27.2",
     "uvicorn>=0.49.0",
 ]
 
@@ -23,3 +24,10 @@ dev = [
     "testcontainers[postgres]>=4.14.2",
     "ty>=0.0.47",
 ]
+
+[tool.uv.sources]
+utils = { path = "utils", editable = true }
+cli = { path = "infra/content", editable = true }
+
+[tool.ty.rules]
+unresolved-import = "ignore"
