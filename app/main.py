@@ -202,12 +202,17 @@ def select_show(_shows, _seasons, selection: dict | None, user: dict | None):
     if clicked["type"] == TYPE_SEASON_TAB and selection:
         return {"show": selection["show"], "season": clicked["index"]}
     show = clicked["index"]
-    season = None
-    # Open the show on the season the user was last watching, if any
-    if user:
+    try:
+        seasons = api.get_season_options(show)
+    except ApiError:
+        seasons = []
+    # Always store a real season (episode playback reads it from here), preferring
+    # the season the user was last watching
+    season = seasons[0] if seasons else None
+    if user and seasons:
         try:
             last_played = api.get_last_played_selection(user["name"])
-            if last_played.get("show") == show:
+            if last_played.get("show") == show and last_played["season"] in seasons:
                 season = last_played["season"]
         except ApiError:
             pass
@@ -224,11 +229,10 @@ def select_show(_shows, _seasons, selection: dict | None, user: dict | None):
 def render_show_panel(selection: dict | None, _, user: dict | None):
     if not selection:
         return []
-    show = selection["show"]
+    show, season = selection["show"], selection["season"]
     try:
         seasons = api.get_season_options(show)
-        season = selection["season"] or (seasons[0] if seasons else None)
-        episodes = api.get_episode_options(show, season) if season else []
+        episodes = api.get_episode_options(show, season) if season is not None else []
     except ApiError:
         message = f"Couldn't unearth the episodes of {pretty_title(show)}."
         return [html.P(message, className="empty")]
@@ -377,7 +381,11 @@ def dispatch_play(*args) -> tuple:
             selection = up_next["selection"]
         elif clicked["type"] == TYPE_FILM_CARD:
             selection = api.get_film(clicked["index"])
-        elif clicked["type"] == TYPE_EPISODE_TILE and show_selection:
+        elif (
+            clicked["type"] == TYPE_EPISODE_TILE
+            and show_selection
+            and show_selection["season"] is not None
+        ):
             selection = api.get_episode_selection_data(
                 show_selection["show"], show_selection["season"], clicked["index"]
             )
