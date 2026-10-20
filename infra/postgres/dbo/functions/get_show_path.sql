@@ -1,12 +1,10 @@
-create or replace function get_show_path(show_ text, season integer, episode integer)
-returns table (
-file text,
-plays integer,
-last_played timestamp,
-file_key integer
-)
-as
-$$
+CREATE OR REPLACE FUNCTION GET_SHOW_PATH (SHOW_ TEXT, SEASON INTEGER, EPISODE INTEGER) RETURNS TABLE (
+	FILE TEXT,
+	PLAYS INTEGER,
+	LAST_PLAYED TIMESTAMP,
+	FILE_KEY INTEGER,
+	DURATION INTEGER
+) AS $$
 with last_played as (
 	select file_key
 		,count(file_key) as plays
@@ -18,11 +16,11 @@ select c.file
 	,lp.plays
 	,lp.last_played
     ,c.file_key
+	,s.duration
 from shows s
 left join content c on s.file_key = c.file_key
 left join last_played lp on s.file_key = lp.file_key
 where s.show = get_show_path.show_
 	and s.season = get_show_path.season
 	and s.episode = get_show_path.episode;
-$$
-language sql;
+$$ LANGUAGE SQL;

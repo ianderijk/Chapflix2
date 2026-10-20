@@ -1,13 +1,11 @@
-create or replace function get_next_episode(usr_id integer)
-returns table (
-file text,
-show text,
-season integer,
-episode integer,
-file_key integer
-)
-as
-$$
+CREATE OR REPLACE FUNCTION GET_NEXT_EPISODE (USR_ID INTEGER) RETURNS TABLE (
+	FILE TEXT,
+	SHOW TEXT,
+	SEASON INTEGER,
+	EPISODE INTEGER,
+	FILE_KEY INTEGER,
+	DURATION INTEGER
+) AS $$
 with last_played as (
 	select *
 	from get_last_played(usr_id)
@@ -33,6 +31,7 @@ with last_played as (
 		,s.episode
 		,c.file
 	    ,c.file_key
+		,s.duration
 	from shows as s
 	left join content as c on s.file_key = c.file_key
 	where s.show = (select show from last_played)
@@ -64,9 +63,11 @@ select case when lpvs.episode != lpvs.max_episode then ss.file
         ,case when lpvs.episode != lpvs.max_episode then ss.file_key
             when ns.show is not null then c.file_key
             else null end as file_key
+		,case when lpvs.episode != lpvs.max_episode then ss.duration
+			when ns.show is not null then ns.duration
+			else null end as duration
 from last_played_versus_season as lpvs
 left join same_season as ss on lpvs.show = ss.show
 left join next_season as ns on lpvs.show = ns.show
 left join content as c on ns.file_key = c.file_key
-$$
-language sql;
+$$ LANGUAGE SQL;
