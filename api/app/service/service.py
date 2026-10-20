@@ -31,6 +31,7 @@ def get_last_played(user: User) -> LastPlayed:
         episode=values[5],
         file=values[6],
         last_played=values[7],
+        duration=values[8],
     )
     return last_played
 
@@ -46,6 +47,7 @@ def get_next_episode(user: User) -> AutoPlay:
         season=values[2],
         episode=values[3],
         file_key=values[4],
+        duration=values[5],
     )
     return next_episode
 
@@ -61,6 +63,7 @@ def get_previous_episode(user: User) -> AutoPlay:
         season=values[2],
         episode=values[3],
         file_key=values[4],
+        duration=values[5],
     )
     return previous_episode
 
@@ -84,6 +87,7 @@ def get_film(film: str) -> Film:
         file_key=values[3],
         plays=values[1],
         last_played=values[2],
+        duration=values[4],
     )
     return selection
 
@@ -127,6 +131,7 @@ def get_episode(show: str, season: int, episode: int) -> Episode:
         file_key=values[3],
         plays=values[1],
         last_played=values[2],
+        duration=values[4],
     )
     return selection
 

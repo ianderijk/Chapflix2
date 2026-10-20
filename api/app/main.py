@@ -96,12 +96,13 @@ async def record_play(body: Watched):
 @app.post("/record-paused")
 async def paused_play(body: PausedPlay):
     statement = (
-        "insert into paused_content (user_id, video_progress)"
-        "values (:user_id, :video_progress);"
+        "insert into paused_content (user_id, video_progress, file_key)"
+        "values (:user_id, :video_progress, :file_key);"
     )
     params = {
         "user_id": body.user_id,
         "video_progress": body.video_progress,
+        "file_key": body.file_key,
     }
     execute_statement(statement, params)
     return {"status_code": 200, "detail": "Recorded paused"}

@@ -87,5 +87,8 @@ def record_watched(selection: dict[str, Any], user_id: int) -> None:
     )
 
 
-def record_paused(user_id: int, seconds: float) -> None:
-    _post("record-paused", {"user_id": user_id, "video_progress": seconds})
+def record_paused(user_id: int, file_key: int, seconds: float) -> None:
+    _post(
+        "record-paused",
+        {"user_id": user_id, "file_key": file_key, "video_progress": seconds},
+    )

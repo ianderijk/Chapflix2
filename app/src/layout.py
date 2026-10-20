@@ -1,12 +1,9 @@
-from pathlib import Path
-
 from dash import dcc, html
 from dash_extensions import EventListener
 
 from app.src.player import card_palette, pretty_title
 
 USERS = ["Lady", "Chap"]
-COUNTDOWN_SECONDS = 10
 
 ID_TOP = "top"
 ID_USER_STORE = "UserStore"
@@ -14,8 +11,10 @@ ID_CATALOGUE_STORE = "CatalogueStore"
 ID_SHOW_SELECTION_STORE = "ShowSelectionStore"
 ID_PLAY_REQUEST_STORE = "PlayRequestStore"
 ID_UP_NEXT_STORE = "UpNextStore"
-ID_REDUNDANT_STORE = "RedundantOutputStore"
-ID_COUNTDOWN = "Countdown"
+ID_COUNTDOWN_STORE = "CountdownStore"
+ID_DISMISSED_STORE = "DismissedStore"
+ID_PAUSED_STORE = "PausedStore"
+ID_ENDED_STORE = "EndedStore"
 
 ID_GATE = "ProfileGate"
 ID_PROFILE_NAME = "ProfileName"
@@ -59,28 +58,27 @@ TYPE_EPISODE_TILE = "episode-tile"
 ORNAMENT = "✠"
 
 
-def video_player(file: Path | str | None) -> EventListener:
-    """The EventListener always exists so its callbacks have something to bind to."""
-    children = []
-    if file:
-        children = [
-            html.Video(
-                controls=True,
-                id=ID_PLAYER,
-                src=str(file),
-                autoPlay=True,
-                className="theatre__video",
-            )
-        ]
+def build_video_player() -> EventListener:
+    """The video element is never re-rendered, only its src changes.
+
+    EventListener attaches its listeners to its children once, when it mounts,
+    so swapping the video element out would silently stop all playback events.
+    """
     return EventListener(
         id=ID_VIDEO_EVENTS,
         events=[
-            {"event": "pause", "props": ["target.currentTime"]},
-            {"event": "loadedmetadata"},
+            {"event": "pause", "props": ["type", "target.currentTime"]},
+            {"event": "timeupdate", "props": ["type", "target.currentTime"]},
             {"event": "ended", "props": ["type"]},
         ],
-        logging=True,
-        children=children,
+        children=[
+            html.Video(
+                id=ID_PLAYER,
+                controls=True,
+                autoPlay=True,
+                className="theatre__video",
+            )
+        ],
     )
 
 
@@ -92,8 +90,10 @@ def build_stores() -> html.Div:
             dcc.Store(id=ID_SHOW_SELECTION_STORE),
             dcc.Store(id=ID_PLAY_REQUEST_STORE),
             dcc.Store(id=ID_UP_NEXT_STORE),
-            dcc.Store(id=ID_REDUNDANT_STORE, storage_type="session"),
-            dcc.Interval(id=ID_COUNTDOWN, interval=1000, disabled=True),
+            dcc.Store(id=ID_COUNTDOWN_STORE),
+            dcc.Store(id=ID_DISMISSED_STORE),
+            dcc.Store(id=ID_PAUSED_STORE),
+            dcc.Store(id=ID_ENDED_STORE),
         ]
     )
 
@@ -174,7 +174,7 @@ def build_theatre() -> html.Section:
             html.Div(
                 className="theatre__stage",
                 children=[
-                    html.Div(id=ID_VIDEO_CONTAINER, children=video_player(None)),
+                    html.Div(id=ID_VIDEO_CONTAINER, children=build_video_player()),
                     build_up_next(),
                 ],
             ),

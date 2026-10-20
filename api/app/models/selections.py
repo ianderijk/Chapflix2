@@ -14,6 +14,7 @@ class BaseTrackedMedia(BaseMedia):
 
     plays: int | None = None
     last_played: datetime | None = None
+    duration: int
 
 
 class BaseEpisodeInfo(BaseModel):
