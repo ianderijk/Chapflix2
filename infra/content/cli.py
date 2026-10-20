@@ -1,9 +1,14 @@
 import typer
 
-from .content_migrate import Migration
-from .content_load import load_db
+from infra.content.content_migrate import Migration
+from infra.content.content_load import load_db
 
 app = typer.Typer()
+
+
+@app.command()
+def load_content():
+    load_db()
 
 
 @app.command()
