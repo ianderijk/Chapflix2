@@ -5,7 +5,13 @@ import pytest
 
 from app.src import player
 from app.src.callbacks import playback
-from app.src.layout import ID_ENDED_STORE, ID_HERO_NEXT, ID_UP_NEXT_PLAY
+from app.src.layout import (
+    ID_ENDED_STORE,
+    ID_HERO_NEXT,
+    ID_HERO_RESUME,
+    ID_UP_NEXT_PLAY,
+)
+from tests.frontend.conftest import MEDIA_FILES
 
 USER = {"name": "Chap", "id": 2}
 PLAY_ID = 1700000000000
@@ -13,7 +19,7 @@ PLAY_ID = 1700000000000
 
 def _episode(show: str, season: int, episode: int, file_key: int = 99) -> dict:
     return {
-        "file": str(player.MEDIA_FILES / "content" / show / f"S{season}E{episode}.mp4"),
+        "file": str(MEDIA_FILES / "content" / show / f"S{season}E{episode}.mp4"),
         "file_key": file_key,
         "show": show,
         "season": season,
@@ -133,7 +139,7 @@ def test_up_next_is_fetched_once_per_playback():
     with patch.object(
         playback.api, "get_next_episode_selection", return_value=episode
     ) as get_next:
-        up_next = playback.prepare_up_next(countdown, None, USER)
+        up_next, notice = playback.prepare_up_next(countdown, None, USER)
         again = playback.prepare_up_next({**countdown, "seconds": 8}, up_next, USER)
     get_next.assert_called_once_with("Chap")
     assert up_next == {
@@ -141,20 +147,73 @@ def test_up_next_is_fetched_once_per_playback():
         "selection": episode,
         "title": "The Simpsons · S4 E4",
     }
-    assert again is dash.no_update
+    assert notice is dash.no_update
+    assert again == (dash.no_update, dash.no_update)
 
 
-def test_up_next_without_a_next_episode_is_remembered_as_empty():
-    with patch.object(
-        playback.api, "get_next_episode_selection", side_effect=playback.ApiError
-    ):
-        up_next = playback.prepare_up_next(
+def test_end_of_show_is_remembered_quietly():
+    with patch.object(playback.api, "get_next_episode_selection", return_value=None):
+        up_next, notice = playback.prepare_up_next(
             {"play_id": PLAY_ID, "seconds": 9}, None, USER
         )
     assert up_next == {"play_id": PLAY_ID, "selection": None, "title": ""}
+    assert notice is dash.no_update
+
+
+def test_api_failure_looking_up_next_episode_is_reported():
+    with patch.object(
+        playback.api, "get_next_episode_selection", side_effect=playback.ApiError
+    ):
+        up_next, notice = playback.prepare_up_next(
+            {"play_id": PLAY_ID, "seconds": 9}, None, USER
+        )
+    assert up_next == {"play_id": PLAY_ID, "selection": None, "title": ""}
+    assert notice == "Couldn't find the next episode."
+
+
+def test_hero_next_at_the_end_of_a_show_explains_why_nothing_plays():
+    with (
+        patch.object(playback.api, "get_next_episode_selection", return_value=None),
+        patch.object(playback.api, "record_watched") as record_watched,
+    ):
+        assert _dispatch(ID_HERO_NEXT) == (
+            dash.no_update,
+            "There's no episode that way.",
+        )
+    record_watched.assert_not_called()
+
+
+def test_resume_starts_from_the_pause_in_that_file():
+    last_played = {**_episode("TheSimpsons", 4, 3, file_key=1), "media_type": "show"}
+    with (
+        patch.object(
+            playback.api, "get_last_played_selection", return_value=last_played
+        ),
+        patch.object(
+            playback.api, "get_continue_watching_from", return_value=71.5
+        ) as paused_at,
+    ):
+        request, _ = _dispatch(ID_HERO_RESUME)
+    paused_at.assert_called_once_with(USER["id"], 1)
+    assert request["src"].endswith("#t=71.5")
 
 
 def test_pause_is_recorded_against_the_file():
     with patch.object(playback.api, "record_paused") as record_paused:
         playback.record_pause({"file_key": 74, "seconds": 42.0}, USER)
     record_paused.assert_called_once_with(USER["id"], 74, 42.0)
+
+
+def test_nothing_is_recorded_when_the_play_request_cannot_be_built():
+    """Regression: a selection from an API without durations was recorded as
+    played before building the player request failed, so nothing played."""
+    episode = _episode("TheOffice", 1, 4)
+    del episode["duration"]
+    tile = {"type": "episode-tile", "index": 4}
+    with (
+        patch.object(playback.api, "get_episode_selection_data", return_value=episode),
+        patch.object(playback.api, "record_watched") as record_watched,
+        pytest.raises(KeyError),
+    ):
+        _dispatch(tile, {"show": "TheOffice", "season": 1})
+    record_watched.assert_not_called()

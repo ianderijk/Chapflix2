@@ -3,7 +3,7 @@
 Run with:
     CHAPFLIX_E2E_APP_URL=http://127.0.0.1:8050 \\
     CHAPFLIX_E2E_API_URL=http://localhost:8043 \\
-    uv run --with playwright pytest tests/frontend/test_e2e_playback.py
+    uv run pytest tests/frontend/test_e2e_playback.py
 
 These tests record plays and pauses for the Chap profile, so only point them at
 a dev database. Playwright's Firefox can't keep decoding H.264 after a seek, so
@@ -101,10 +101,19 @@ def page():
         browser.close()
 
 
-def test_pause_is_recorded(page):
+def test_pause_is_recorded_and_resumed_for_that_file(page):
     _resume(page)
     _emit(page, "pause", 42)
-    assert _api("get-paused/2")["seconds"] == pytest.approx(42)
+    file_key = _api("user/Chap/last-played")["file_key"]
+    assert _api(f"get-paused/2/{file_key}")["seconds"] == pytest.approx(42)
+    page.reload()
+    page.locator("#HeroResume.btn--blood").wait_for(timeout=15000)
+    assert page.locator("#HeroMeta").inner_text().endswith("Paused at 0:42")
+    page.locator("#HeroResume").click()
+    page.wait_for_function(
+        "(document.querySelector('#Player').getAttribute('src') || '').includes('#t=42')",
+        timeout=15000,
+    )
 
 
 def test_countdown_runs_through_the_last_ten_seconds(page):
@@ -141,3 +150,27 @@ def test_play_now_skips_the_countdown(page):
     _seconds_before_end(page, 7)
     page.locator("#UpNextPlay").click()
     assert _wait_for_change(page, playing) != playing
+
+
+def _final_episode(show: str) -> tuple[int, int]:
+    season = _api(f"show/{show}/seasons")["seasons"][-1]
+    return season, _api(f"show/{show}/{season}")["episodes"][-1]
+
+
+def test_no_next_episode_after_the_end_of_a_show(page):
+    season, episode = _final_episode("TheThickOfIt")
+    page.locator(_component("show-card", "TheThickOfIt")).click()
+    page.locator(".show-panel__title", has_text="The Thick Of It").wait_for()
+    page.locator(_component("season-tab", season)).click()
+    page.locator(".season-tab--active", has_text=f"Season {season}").wait_for()
+    page.locator(_component("episode-tile", episode)).click()
+    page.wait_for_function(
+        "text => document.querySelector('#NowPlayingSubtitle').innerText === text",
+        arg=f"Season {season} · Episode {episode}",
+        timeout=15000,
+    )
+    assert _api("user/Chap/next-episode") is None
+    page.locator("#HeroNext.btn--hidden").wait_for(state="attached", timeout=15000)
+    _seconds_before_end(page, 5)
+    assert not _up_next_visible(page)
+    assert page.locator("#Notice").inner_text() == ""

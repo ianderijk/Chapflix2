@@ -15,7 +15,6 @@ RUN uv sync
 # Copy source code
 COPY app/ ./app
 COPY utils ./utils
-COPY assets/ ./assets
 
 # Expose dash port
 EXPOSE 8042

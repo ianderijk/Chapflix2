@@ -2,6 +2,20 @@
 
 A Dash app that talks to the Chapflix API and streams media from `content/`.
 
+## Configuration
+
+Both variables are required and have no defaults, so the app can never talk to
+the wrong environment by accident. It refuses to start if either is missing.
+
+| Variable               | Purpose                                                                    |
+| ---------------------- | -------------------------------------------------------------------------- |
+| `CHAPFLIX_API_URL`     | Base URL of the API                                                        |
+| `CHAPFLIX_MEDIA_FILES` | Prefix stripped from the API's `file` paths to get a URL under `/content/` |
+
+`CHAPFLIX_MEDIA_FILES` must match the paths the API returns, which are paths on
+the machine that loaded the database, not paths inside the app container. The
+container only needs the media mounted at `/app/content`.
+
 ## Running locally
 
 ```bash
@@ -10,18 +24,24 @@ CHAPFLIX_MEDIA_FILES=/media/idr/ExtDrive/Chapflix2/ \
 uv run -m app.main
 ```
 
-| Variable               | Default                              | Purpose                                                                    |
-| ---------------------- | ------------------------------------ | -------------------------------------------------------------------------- |
-| `CHAPFLIX_API_URL`     | `http://192.168.0.29:8043/`          | Base URL of the API                                                        |
-| `CHAPFLIX_MEDIA_FILES` | `/media/ianderijk/Backup/Chapflix2/` | Prefix stripped from the API's `file` paths to get a URL under `/content/` |
+## Running in a container
 
-The defaults point at production.
+On the same Docker network as the API, use the API container's name:
+
+```yaml
+environment:
+  CHAPFLIX_API_URL: http://chapflix2-api-container:8043/
+  CHAPFLIX_MEDIA_FILES: /media/idr/ExtDrive/Chapflix2/
+volumes:
+  - /media/idr/ExtDrive/Chapflix2/content:/app/content
+```
 
 ## Layout
 
 | Path                  | What lives there                                                |
 | --------------------- | --------------------------------------------------------------- |
 | `main.py`             | Creates the Dash app, serves `/content/`, registers callbacks   |
+| `src/config.py`       | Required environment variables                                  |
 | `src/api_client.py`   | Every call to the API; failures raise `ApiError`                |
 | `src/layout.py`       | Component IDs and page structure                                |
 | `src/player.py`       | Display formatting and the play request handed to the player    |
@@ -54,7 +74,12 @@ Because the countdown follows the video's position, it pauses with the video and
 disappears if you seek back. Films never count down.
 
 Pauses are recorded with the file's `file_key`, except the pause browsers fire
-on reaching the end.
+on reaching the end. Resume asks the API for the pause in the last-played file,
+so a pause in one file never sets the start point of another.
+
+At the start or end of a show the API returns `null` for the previous or next
+episode. That hides the matching billboard button and means no countdown appears;
+API failures show a notice instead.
 
 ## Checks
 
@@ -81,10 +106,10 @@ The end-to-end tests drive Firefox through Playwright against a running app and
 **dev** API, and record plays and pauses for the Chap profile:
 
 ```bash
-uv run --with playwright playwright install firefox
+uv run playwright install firefox
 CHAPFLIX_E2E_APP_URL=http://127.0.0.1:8050 \
 CHAPFLIX_E2E_API_URL=http://localhost:8043 \
-uv run --with playwright pytest tests/frontend/test_e2e_playback.py
+uv run pytest tests/frontend/test_e2e_playback.py
 ```
 
 Playwright's Firefox can't keep decoding H.264 after a seek, so these tests fake

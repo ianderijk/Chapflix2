@@ -103,23 +103,33 @@ def select_show(_shows, _seasons, selection: dict | None, user: dict | None):
     return {"show": show, "season": _opening_season(show, seasons, user)}
 
 
+def _episode_in_season(
+    selection: dict | None, show: str, season: int | None
+) -> int | None:
+    if selection and selection.get("show") == show and selection["season"] == season:
+        return selection["episode"]
+    return None
+
+
 def _episode_markers(
     show: str, season: int | None, user: dict | None
 ) -> tuple[int | None, int | None]:
-    """Which episode of this season was last watched, and which is up next."""
-    last_watched = up_next = None
+    """Which episode of this season was last watched, and which is up next.
+
+    The markers are decoration, so if the API can't supply them the panel is
+    shown without them.
+    """
     if not user:
-        return last_watched, up_next
+        return None, None
     try:
         last_played = api.get_last_played_selection(user["name"])
-        if last_played.get("show") == show and last_played["season"] == season:
-            last_watched = last_played["episode"]
         next_episode = api.get_next_episode_selection(user["name"])
-        if next_episode["show"] == show and next_episode["season"] == season:
-            up_next = next_episode["episode"]
     except ApiError:
-        pass
-    return last_watched, up_next
+        return None, None
+    return (
+        _episode_in_season(last_played, show, season),
+        _episode_in_season(next_episode, show, season),
+    )
 
 
 @callback(

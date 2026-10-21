@@ -90,13 +90,15 @@ def _queued_episode(
 
 def _resume(user: dict) -> dict[str, Any]:
     last_played = api.get_last_played_selection(user["name"])
-    seconds = api.get_continue_watching_from(user["id"])
+    seconds = api.get_continue_watching_from(user["id"], last_played["file_key"])
     return build_play_request(last_played, seconds)
 
 
 def _record_and_play(selection: dict[str, Any], user: dict) -> dict[str, Any]:
+    """Build the request first so a play is only recorded if it can start."""
+    request = build_play_request(selection)
     api.record_watched(selection, user["id"])
-    return build_play_request(selection)
+    return request
 
 
 def _selection_for(trigger: Any, user: dict, show_selection: dict | None):
@@ -150,6 +152,8 @@ def dispatch_play(*args) -> tuple:
             selection = _queued_episode(up_next, dismissed, play_request)
         else:
             selection = _selection_for(trigger, user, show_selection)
+        if selection is None and trigger in (ID_HERO_PREV, ID_HERO_NEXT):
+            return dash.no_update, "There's no episode that way."
         if selection is None:
             return dash.no_update, dash.no_update
         return _record_and_play(selection, user), ""
@@ -178,25 +182,43 @@ def render_player(request: dict | None) -> tuple:
     )
 
 
+def _up_next_title(selection: dict[str, Any] | None) -> str:
+    if selection is None:
+        return ""
+    return f"{get_title(selection)} · {get_episode_label(selection)}"
+
+
 @callback(
     Output(ID_UP_NEXT_STORE, "data"),
+    Output(ID_NOTICE, "children", allow_duplicate=True),
     Input(ID_COUNTDOWN_STORE, "data"),
     State(ID_UP_NEXT_STORE, "data"),
     State(ID_USER_STORE, "data"),
     prevent_initial_call=True,
 )
-def prepare_up_next(countdown: dict | None, up_next: dict | None, user: dict | None):
-    """Look up the next episode once, when the countdown for a playback begins."""
+def prepare_up_next(
+    countdown: dict | None, up_next: dict | None, user: dict | None
+) -> tuple:
+    """Look up the next episode once, when the countdown for a playback begins.
+
+    At the end of a show there is no next episode; that is remembered for the
+    playback so the lookup isn't repeated every second of the countdown.
+    """
     if not countdown or not user:
-        return dash.no_update
+        return dash.no_update, dash.no_update
     if up_next and up_next["play_id"] == countdown["play_id"]:
-        return dash.no_update
+        return dash.no_update, dash.no_update
+    notice = dash.no_update
     try:
         selection = api.get_next_episode_selection(user["name"])
-        title = f"{get_title(selection)} · {get_episode_label(selection)}"
     except ApiError:
-        selection, title = None, ""
-    return {"play_id": countdown["play_id"], "selection": selection, "title": title}
+        selection, notice = None, "Couldn't find the next episode."
+    up_next = {
+        "play_id": countdown["play_id"],
+        "selection": selection,
+        "title": _up_next_title(selection),
+    }
+    return up_next, notice
 
 
 @callback(

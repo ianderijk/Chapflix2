@@ -3,8 +3,11 @@ from pathlib import Path
 import dash
 from flask import send_from_directory
 
+from app.src import config
 from app.src.callbacks import billboard, browse, playback, profile
 from app.src.layout import build_layout
+
+config.check()
 
 CALLBACK_MODULES = (billboard, browse, playback, profile)
 

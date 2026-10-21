@@ -1,14 +1,11 @@
 import hashlib
-import os
 import re
 import time
 from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-MEDIA_FILES = Path(
-    os.environ.get("CHAPFLIX_MEDIA_FILES", "/media/ianderijk/Backup/Chapflix2/")
-)
+from app.src import config
 
 CARD_PALETTES = [
     ("#5c0a14", "#1a0306"),
@@ -21,7 +18,7 @@ CARD_PALETTES = [
 
 
 def _format_filepath(filepath: str) -> Path:
-    return Path(filepath).relative_to(MEDIA_FILES)
+    return Path(filepath).relative_to(config.media_files())
 
 
 def format_play_timestamp(timestamp: str | None) -> str:

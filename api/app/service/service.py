@@ -36,11 +36,14 @@ def get_last_played(user: User) -> LastPlayed:
     return last_played
 
 
-def get_next_episode(user: User) -> AutoPlay:
+def get_next_episode(user: User) -> AutoPlay | None:
     query = "select * from get_next_episode(:user_id);"
     params = {"user_id": user.id_}
     data = execute_query(query, params)
     values = data[0]
+    if all(x is None for x in values):
+        return None
+
     next_episode = AutoPlay(
         file=values[0],
         show=values[1],
@@ -52,11 +55,14 @@ def get_next_episode(user: User) -> AutoPlay:
     return next_episode
 
 
-def get_previous_episode(user: User) -> AutoPlay:
+def get_previous_episode(user: User) -> AutoPlay | None:
     query = "select * from get_previous_episode(:user_id);"
     params = {"user_id": user.id_}
     data = execute_query(query, params)
     values = data[0]
+    if all(x is None for x in values):
+        return None
+
     previous_episode = AutoPlay(
         file=values[0],
         show=values[1],
@@ -136,9 +142,9 @@ def get_episode(show: str, season: int, episode: int) -> Episode:
     return selection
 
 
-def get_paused_time(user_id: int) -> ResumePaused:
-    query = "select video_progress from paused_content where user_id = :user_id order by play_num desc limit 1;"
-    params = {"user_id": user_id}
+def get_paused_time(user_id: int, file_key: int) -> ResumePaused:
+    query = "select video_progress from paused_content where user_id = :user_id and file_key = :file_key order by play_num desc limit 1;"
+    params = {"user_id": user_id, "file_key": file_key}
     data = execute_query(query, params)
     if not data:
         value = 0.0

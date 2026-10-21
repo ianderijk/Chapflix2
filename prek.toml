@@ -1,4 +1,4 @@
-exclude = "^tests/"
+exclude = "^tests/backend/*"
 
 [[repos]]
 repo = "https://github.com/pre-commit/pre-commit-hooks"
@@ -36,5 +36,25 @@ hooks = [
         args = ["run", "ty", "check"],
         language = "system",
         types = ["python"]
+    },
+
+    {
+        id = "frontend-lint",
+        name = "Frontend linting and formatting",
+        entry = "npm",
+        args = ["--prefix", "app", "run", "lint"],
+        language = "system",
+        files = "^app/(assets/|.*\\.(js|json)$)",
+        pass_filenames = false
+    },
+
+    {
+        id = "frontend-js-tests",
+        name = "Frontend JavaScript tests",
+        entry = "npm",
+        args = ["--prefix", "app", "test"],
+        language = "system",
+        files = "^app/assets/.*\\.js$",
+        pass_filenames = false
     }
 ]
