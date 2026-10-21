@@ -29,17 +29,21 @@ async def get_last_played(user: User = Depends(_get_current_user)) -> dict[str, 
 
 
 @app.get("/user/{name}/next-episode")
-async def get_next_episode(user: User = Depends(_get_current_user)) -> dict[str, Any]:
+async def get_next_episode(
+    user: User = Depends(_get_current_user),
+) -> dict[str, Any] | None:
     next_play = service.get_next_episode(user)
-    return next_play.model_dump()
+    if next_play:
+        return next_play.model_dump()
 
 
 @app.get("/user/{name}/previous-episode")
 async def get_previous_episode(
     user: User = Depends(_get_current_user),
-) -> dict[str, Any]:
+) -> dict[str, Any] | None:
     previous_play = service.get_previous_episode(user)
-    return previous_play.model_dump()
+    if previous_play:
+        return previous_play.model_dump()
 
 
 @app.get("/films")
@@ -78,9 +82,9 @@ async def get_episode(show: str, season: int, episode: int) -> dict[str, Any]:
     return selection.model_dump()
 
 
-@app.get("/get-paused/{user}")
-async def get_paused(user: int) -> dict[str, Any]:
-    seconds = service.get_paused_time(user)
+@app.get("/get-paused/{user}/{file_key}")
+async def get_paused(user: int, file_key: int) -> dict[str, Any]:
+    seconds = service.get_paused_time(user, file_key)
     return seconds.model_dump()
 
 
@@ -96,12 +100,13 @@ async def record_play(body: Watched):
 @app.post("/record-paused")
 async def paused_play(body: PausedPlay):
     statement = (
-        "insert into paused_content (user_id, video_progress)"
-        "values (:user_id, :video_progress);"
+        "insert into paused_content (user_id, video_progress, file_key)"
+        "values (:user_id, :video_progress, :file_key);"
     )
     params = {
         "user_id": body.user_id,
         "video_progress": body.video_progress,
+        "file_key": body.file_key,
     }
     execute_statement(statement, params)
     return {"status_code": 200, "detail": "Recorded paused"}
