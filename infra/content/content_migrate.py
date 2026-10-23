@@ -5,7 +5,7 @@ from pathlib import Path
 
 SOURCE_ROOT = Path("/media/idr/ExtDrive/Chapflix2/content")
 TARGET_ROOT = Path("/media/ianderijk/Backup/Chapflix2/content")
-KEY_PATH = Path("/home/idr/.ssh/id_rsa_target")
+KEY_PATH = Path("/home/idr/.ssh/id_ed25519")
 TARGET_ADDRESS = "ianderijk@192.168.0.29"
 
 

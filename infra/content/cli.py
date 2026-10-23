@@ -14,7 +14,6 @@ def load_content():
 @app.command()
 def push_content():
     Migration().main()
-    load_db()
 
 
 if __name__ == "__main__":

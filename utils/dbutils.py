@@ -1,10 +1,7 @@
 from typing import Any, Sequence, Mapping
-from dotenv import load_dotenv
 from sqlalchemy import MetaData, Table, Engine, Row, create_engine, text, insert
 from contextvars import ContextVar
 import os
-
-load_dotenv()
 
 
 class MissingEnvironmentError(Exception):
