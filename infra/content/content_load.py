@@ -19,6 +19,10 @@ class MalformedContentError(Exception):
     pass
 
 
+class MissingEnvVarError(Exception):
+    pass
+
+
 class ContentType(Enum):
     SHOW = "show"
     FILM = "film"
@@ -110,7 +114,17 @@ def _get_loaded_content() -> dict[Path, int] | dict:
     return records
 
 
-MEDIA_FILES = Path("/media/idr/ExtDrive/Chapflix2/content")
+def _get_media_files() -> Path:
+    path = os.getenv("MEDIA_FILES")
+    if path:
+        return Path(path)
+
+    raise MissingEnvVarError(
+        "No env var for media files, please set one in the root .env file"
+    )
+
+
+MEDIA_FILES = _get_media_files()
 loaded_content = ContextVar("loaded_content", default={})
 is_content_loaded = True if loaded_content.get() else False
 
