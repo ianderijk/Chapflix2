@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 
 API_URL_VARIABLE = "CHAPFLIX_API_URL"
-MEDIA_FILES_VARIABLE = "CHAPFLIX_MEDIA_FILES"
+MEDIA_FILES_VARIABLE = "MEDIA_FILES"
 
 
 class MissingConfigurationError(Exception):
