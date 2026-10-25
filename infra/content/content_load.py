@@ -13,6 +13,9 @@ from utils.dbutils import (
     get_table,
     TABLES,
 )
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 class MalformedContentError(Exception):
