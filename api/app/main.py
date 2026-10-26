@@ -4,6 +4,7 @@ from datetime import datetime
 from utils.dbutils import execute_statement
 from api.app.models.user import User
 from api.app.models.events import Watched, PausedPlay
+from api.app.models.health import Health
 from api.app.service import service
 
 
@@ -15,6 +16,11 @@ def _get_current_user(name: str) -> User:
     if not user:
         raise HTTPException(status_code=404, detail=f"User '{name}' not found")
     return user
+
+
+@app.get("/health")
+async def health() -> dict[str, Any]:
+    return Health(status="healthy").model_dump()
 
 
 @app.get("/user/{name}")
