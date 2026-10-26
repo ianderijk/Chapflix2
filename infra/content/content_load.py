@@ -128,7 +128,7 @@ def _get_media_files() -> Path:
 
 
 MEDIA_FILES = _get_media_files()
-loaded_content = ContextVar("loaded_content", default={})
+loaded_content = ContextVar("loaded_content", default=_get_loaded_content())
 is_content_loaded = True if loaded_content.get() else False
 
 
