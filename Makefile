@@ -17,8 +17,11 @@ api:
 app:
 	uv run -m app.main
 
-content:
-	uv run -m infra.content.cli
+content-push:
+	uv run -m infra.content.cli push-content
+
+content-load:
+	uv run -m infra.content.cli load-content
 
 test:
 	uv run pytest

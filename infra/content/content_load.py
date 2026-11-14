@@ -269,7 +269,9 @@ def _build_functions() -> None:
 
 
 def _insert_users() -> None:
-    execute_statement("insert into users (display_name) values ('Lady'), ('Chap');")
+    execute_statement(
+        "insert into users (user_id, display_name) values (1, 'Lady'), (2, 'Chap');"
+    )
 
 
 def _insert_dummy_history_records() -> None:
