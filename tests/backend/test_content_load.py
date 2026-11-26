@@ -1,5 +1,4 @@
 import pytest
-import os
 from pathlib import Path
 
 from infra.content.content_load import _strip_path, walk_content, Content, ContentType

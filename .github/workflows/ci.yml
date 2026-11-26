@@ -53,3 +53,15 @@ jobs:
 
       - name: Python tests
         run: uv run pytest ../tests/frontend
+
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Python tests
+        run: uv run pytest ../tests/backend
