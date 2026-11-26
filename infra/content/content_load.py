@@ -15,7 +15,14 @@ from utils.dbutils import (
 )
 from dotenv import load_dotenv
 
+
 load_dotenv()
+
+media_files = ContextVar("media_files", default=Path())
+
+
+def set_media_files(path: Path) -> None:
+    media_files.set(path)
 
 
 class MalformedContentError(Exception):
@@ -31,10 +38,14 @@ class ContentType(Enum):
     FILM = "film"
 
 
-class Content(NamedTuple):
-    type_: ContentType
-    filepath: Path
-    loaded: bool
+class Content:
+    def __init__(self, type_: ContentType, filepath: Path, loaded: bool) -> None:
+        self.type_: ContentType = type_
+        self.filepath: Path = filepath
+        self.loaded: bool = loaded
+
+    def __eq__(self, other):
+        return hash(self.filepath) == hash(other.filepath)
 
 
 class Episode(NamedTuple):
@@ -88,7 +99,7 @@ def _strip_path(path: Path) -> Path:
         >>>> Path("Show/S1E2.mp4")
         ```
     """
-    return path.relative_to(MEDIA_FILES)
+    return path.relative_to(media_files.get())
 
 
 def _tables_exist() -> bool:
@@ -117,17 +128,6 @@ def _get_loaded_content() -> dict[Path, int] | dict:
     return records
 
 
-def _get_media_files() -> Path:
-    path = os.getenv("MEDIA_FILES")
-    if path:
-        return Path(path)
-
-    raise MissingEnvVarError(
-        "No env var for media files, please set one in the root .env file"
-    )
-
-
-MEDIA_FILES = _get_media_files()
 loaded_content = ContextVar("loaded_content", default=_get_loaded_content())
 is_content_loaded = True if loaded_content.get() else False
 
@@ -137,7 +137,7 @@ def _is_loaded(stripped_path: Path) -> bool:
     return stripped_path in _loaded_content
 
 
-def walk_content(media_files: Path) -> list[Content]:
+def walk_content() -> list[Content]:
     """
     Walks the content directory creating a content record for each file.
 
@@ -145,7 +145,7 @@ def walk_content(media_files: Path) -> list[Content]:
         - contents: `[Content(type_: ContentType.SHOW, filepath: Path("path/to/file"), loaded: True]`
     """
     contents = []
-    for path, _, files in os.walk(media_files):
+    for path, _, files in os.walk(media_files.get()):
         path = Path(path)
 
         # Skip images directory
@@ -297,7 +297,7 @@ def load_db() -> None:
     initial_load = not _tables_exist()
     if initial_load:
         build_db()
-    contents = walk_content(MEDIA_FILES)
+    contents = walk_content()
     prepared = prepare_contents(contents)
     load_content(prepared.shows, prepared.films)
     if prepared.shows:

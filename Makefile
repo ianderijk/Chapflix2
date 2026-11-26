@@ -24,4 +24,4 @@ content-load:
 	uv run -m infra.content.cli load-content
 
 test:
-	uv run pytest
+	uv run pytest -vv

@@ -12,7 +12,7 @@ metadata = MetaData(schema="public")
 engine: Any = ContextVar("engine", default=None)
 
 
-def _create_engine() -> Engine:
+def create_db_engine() -> Engine:
     url = os.getenv("DATABASE_URL")
     if url:
         return create_engine(str(url))
@@ -21,7 +21,7 @@ def _create_engine() -> Engine:
 
 def get_engine() -> Engine:
     if engine.get() is None:
-        engine.set(_create_engine())
+        engine.set(create_db_engine())
     return engine.get()
 
 

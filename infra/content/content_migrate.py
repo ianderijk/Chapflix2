@@ -19,6 +19,9 @@ class Migration:
         self.file_memories: dict[Path, int] = {}
         self.time_elapsed: float = 0.0
 
+    def __call__(self) -> None:
+        self.main()
+
     def get_source_assets(self) -> list[Path]:
         files = []
         for x in self.source_folders:
